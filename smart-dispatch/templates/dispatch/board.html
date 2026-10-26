@@ -1,0 +1,15 @@
+{% extends "base.html" %}{% load ui %}
+{% block title %}Status board{% endblock %}
+{% block content %}
+<h1 class="h3 mb-3">Status board</h1>
+<div class="row g-3">
+  {% for col in columns %}
+  <div class="col-md-6 col-xl-3">
+    <div class="bg-body rounded p-2 board-column shadow-sm">
+      <h2 class="h6 d-flex justify-content-between px-1">{{ col.status.label }} <span class="badge text-bg-{{ col.status.value|status_colour }}">{{ col.loads|length }}</span></h2>
+      {% for load in col.loads %}{% include "dispatch/_load_card.html" %}{% empty %}<p class="small text-body-secondary px-1">No loads.</p>{% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% endblock %}

@@ -1,0 +1,57 @@
+{% extends "base.html" %}{% load ui humanize %}
+{% block title %}Load {{ object.reference|default:object.pk }}{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+  <div>
+    <h1 class="h3 mb-0">{{ object.origin_city }}, {{ object.origin_state }} → {{ object.destination_city }}, {{ object.destination_state }}</h1>
+    <span class="badge text-bg-{{ object.status|status_colour }}">{{ object.get_status_display }}</span>
+    <span class="text-body-secondary small ms-2">Ref {{ object.reference|default:"—" }} · {{ object.broker }}</span>
+  </div>
+  {% if user.can_edit_operations %}
+  <div class="d-flex gap-2">
+    {% for s in next_statuses %}
+    <form method="post" action="{% url 'load_status' object.pk %}">{% csrf_token %}
+      <input type="hidden" name="status" value="{{ s.value }}">
+      <button class="btn btn-sm btn-{{ s.value|status_colour }}">{% if s.value == 'available' %}Unassign{% else %}Mark {{ s.label|lower }}{% endif %}</button>
+    </form>
+    {% endfor %}
+    <a class="btn btn-sm btn-outline-secondary" href="{% url 'load_edit' object.pk %}">Edit</a>
+    <a class="btn btn-sm btn-outline-danger" href="{% url 'load_delete' object.pk %}">Delete</a>
+  </div>
+  {% endif %}
+</div>
+<div class="row g-4">
+  <div class="col-lg-7">
+    <div class="card shadow-sm mb-4"><div class="card-body">
+      <dl class="row mb-0">
+        <dt class="col-sm-4">Pickup</dt><dd class="col-sm-8">{{ object.pickup_at|date:"D M d, Y H:i" }}</dd>
+        <dt class="col-sm-4">Delivery</dt><dd class="col-sm-8">{{ object.delivery_at|date:"D M d, Y H:i" }}</dd>
+        <dt class="col-sm-4">Rate</dt><dd class="col-sm-8">${{ object.rate|intcomma }}</dd>
+        <dt class="col-sm-4">Miles</dt><dd class="col-sm-8">{{ object.loaded_miles|intcomma }} loaded + {{ object.deadhead_miles|intcomma }} empty</dd>
+        <dt class="col-sm-4">Commodity</dt><dd class="col-sm-8">{{ object.commodity|default:"—" }}{% if object.weight_lbs %} · {{ object.weight_lbs|intcomma }} lbs{% endif %}</dd>
+        {% if object.delivered_at %}<dt class="col-sm-4">Delivered</dt><dd class="col-sm-8">{{ object.delivered_at|date:"M d, Y H:i" }}</dd>{% endif %}
+        <dt class="col-sm-4">Created by</dt><dd class="col-sm-8">{{ object.created_by|default:"—" }}</dd>
+      </dl>
+    </div></div>
+
+    <div class="card shadow-sm"><div class="card-body">
+      <h2 class="h5">Assignment</h2>
+      {% if assignment %}
+        <p><i class="bi bi-person"></i> {{ assignment.driver }} ({{ assignment.driver.phone }}) · <i class="bi bi-truck"></i> {{ assignment.truck }}</p>
+      {% else %}<p class="text-body-secondary">Not assigned.</p>{% endif %}
+      {% if assign_form and user.can_edit_operations %}
+      <form method="post" action="{% url 'load_assign' object.pk %}" class="row g-2 align-items-end">{% csrf_token %}
+        <div class="col-md-5">{% with field=assign_form.driver %}{% include "_field.html" %}{% endwith %}</div>
+        <div class="col-md-4">{% with field=assign_form.truck %}{% include "_field.html" %}{% endwith %}</div>
+        <div class="col-md-3 mb-3"><button class="btn btn-primary w-100">{% if assignment %}Reassign{% else %}Dispatch{% endif %}</button></div>
+      </form>
+      {% endif %}
+      {% if history|length > 1 %}
+      <h3 class="h6 mt-2">History</h3>
+      <ul class="small mb-0">{% for a in history %}<li>{{ a.assigned_at|date:"M d H:i" }}: {{ a.driver }} / unit {{ a.truck.unit_number }}{% if not a.active %} <span class="text-body-secondary">(replaced)</span>{% endif %}</li>{% endfor %}</ul>
+      {% endif %}
+    </div></div>
+  </div>
+  <div class="col-lg-5">{% include "engine/_result.html" %}</div>
+</div>
+{% endblock %}

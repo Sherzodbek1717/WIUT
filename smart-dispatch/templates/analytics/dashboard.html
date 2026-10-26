@@ -1,0 +1,60 @@
+{% extends "base.html" %}{% load humanize %}
+{% block title %}Dashboard{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+  <h1 class="h3 mb-0">Dashboard</h1>
+  <div class="btn-group btn-group-sm">
+    {% for p in periods %}<a class="btn btn-outline-primary{% if p == weeks %} active{% endif %}" href="?weeks={{ p }}">{{ p }} weeks</a>{% endfor %}
+  </div>
+</div>
+<div class="row g-3 mb-4">
+  <div class="col-6 col-lg"><div class="card shadow-sm"><div class="card-body"><div class="small text-body-secondary">Loads</div><div class="stat-value">{{ summary.count }}</div></div></div></div>
+  <div class="col-6 col-lg"><div class="card shadow-sm"><div class="card-body"><div class="small text-body-secondary">Gross</div><div class="stat-value">${{ summary.revenue|floatformat:0|intcomma }}</div></div></div></div>
+  <div class="col-6 col-lg"><div class="card shadow-sm"><div class="card-body"><div class="small text-body-secondary">Est. profit</div><div class="stat-value {% if summary.profit < 0 %}text-danger{% else %}text-success{% endif %}">${{ summary.profit|floatformat:0|intcomma }}</div></div></div></div>
+  <div class="col-6 col-lg"><div class="card shadow-sm"><div class="card-body"><div class="small text-body-secondary">Avg real $/mi</div><div class="stat-value">${{ summary.rate_per_mile }}</div></div></div></div>
+  <div class="col-12 col-lg"><div class="card shadow-sm"><div class="card-body"><div class="small text-body-secondary">Empty miles</div><div class="stat-value">{{ summary.empty_mile_pct }}%</div></div></div></div>
+</div>
+<div class="card shadow-sm mb-4"><div class="card-body">
+  <h2 class="h5">Weekly gross and estimated profit</h2>
+  <div style="height: 300px"><canvas id="weekly-chart" aria-label="Weekly gross and profit chart" role="img"></canvas></div>
+  <p class="small text-body-secondary mb-0 mt-2">Profit = gross − total miles × ${{ cost_per_mile }}/mi cost benchmark. Weeks start on Monday, by pickup date.</p>
+</div></div>
+<div class="row g-4">
+  <div class="col-lg-6"><div class="card shadow-sm"><div class="card-body">
+    <h2 class="h5">Best lanes <span class="small text-body-secondary fw-normal">(2+ loads)</span></h2>
+    <table class="table table-sm mb-0"><thead><tr><th>Lane</th><th class="text-end">Loads</th><th class="text-end">Real $/mi</th><th class="text-end">Est. profit</th></tr></thead><tbody>
+    {% for l in lanes %}<tr><td>{{ l.origin_state }} → {{ l.destination_state }}</td><td class="text-end">{{ l.count }}</td><td class="text-end">${{ l.rate_per_mile }}</td><td class="text-end">${{ l.profit|floatformat:0|intcomma }}</td></tr>
+    {% empty %}<tr><td colspan="4" class="text-body-secondary">No loads in this period.</td></tr>{% endfor %}
+    </tbody></table>
+  </div></div></div>
+  <div class="col-lg-6"><div class="card shadow-sm"><div class="card-body">
+    <h2 class="h5">Best brokers</h2>
+    <table class="table table-sm mb-0"><thead><tr><th>Broker</th><th class="text-end">Loads</th><th class="text-end">Real $/mi</th><th class="text-end">Gross</th></tr></thead><tbody>
+    {% for b in brokers %}<tr><td>{{ b.broker__name }}</td><td class="text-end">{{ b.count }}</td><td class="text-end">${{ b.rate_per_mile }}</td><td class="text-end">${{ b.revenue|floatformat:0|intcomma }}</td></tr>
+    {% empty %}<tr><td colspan="4" class="text-body-secondary">No loads in this period.</td></tr>{% endfor %}
+    </tbody></table>
+  </div></div></div>
+</div>
+{{ chart|json_script:"chart-data" }}
+{% endblock %}
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.js"></script>
+<script>
+  const data = JSON.parse(document.getElementById("chart-data").textContent);
+  new Chart(document.getElementById("weekly-chart"), {
+    type: "bar",
+    data: {
+      labels: data.labels,
+      datasets: [
+        {label: "Gross", data: data.revenue, backgroundColor: "#0d6efd"},
+        {label: "Est. profit", data: data.profit, backgroundColor: "#198754"},
+      ],
+    },
+    options: {
+      maintainAspectRatio: false,
+      scales: {y: {ticks: {callback: (v) => "$" + v.toLocaleString("en-US")}}},
+      plugins: {tooltip: {callbacks: {label: (c) => `${c.dataset.label}: $${c.parsed.y.toLocaleString("en-US")}`}}},
+    },
+  });
+</script>
+{% endblock %}

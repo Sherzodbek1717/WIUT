@@ -1,0 +1,9 @@
+.board-column { min-height: 60vh; }
+.load-card { border-left: 4px solid var(--bs-border-color); }
+.load-card.status-available { border-left-color: var(--bs-secondary); }
+.load-card.status-dispatched { border-left-color: var(--bs-primary); }
+.load-card.status-in_transit { border-left-color: var(--bs-warning); }
+.load-card.status-delivered { border-left-color: var(--bs-success); }
+.stat-value { font-size: 1.6rem; font-weight: 600; }
+.result-panel .metric { font-size: 1.15rem; font-weight: 600; }
+.auth-card { max-width: 440px; }

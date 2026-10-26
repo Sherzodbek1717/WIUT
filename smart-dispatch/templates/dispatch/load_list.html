@@ -1,0 +1,38 @@
+{% extends "base.html" %}{% load ui humanize %}
+{% block title %}Loads{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+  <h1 class="h3 mb-0">Loads</h1>
+  <form class="d-flex gap-2" method="get">
+    <select name="status" class="form-select form-select-sm"><option value="">All statuses</option>
+      {% for value, label in statuses %}<option value="{{ value }}" {% if value == current_status %}selected{% endif %}>{{ label }}</option>{% endfor %}
+    </select>
+    <input name="q" value="{{ query }}" class="form-control form-control-sm" placeholder="Search city, state, broker, ref">
+    <button class="btn btn-sm btn-outline-primary">Filter</button>
+  </form>
+</div>
+<div class="card shadow-sm"><div class="table-responsive">
+<table class="table table-hover mb-0 align-middle">
+  <thead><tr><th>Ref</th><th>Lane</th><th>Broker</th><th>Pickup</th><th class="text-end">Rate</th><th class="text-end">Miles</th><th class="text-end">$/mi</th><th>Status</th></tr></thead>
+  <tbody>
+  {% for load in object_list %}
+  <tr>
+    <td><a href="{{ load.get_absolute_url }}">{{ load.reference|default:load.pk }}</a></td>
+    <td>{{ load.origin_city }}, {{ load.origin_state }} → {{ load.destination_city }}, {{ load.destination_state }}</td>
+    <td>{{ load.broker }}</td><td>{{ load.pickup_at|date:"M d, H:i" }}</td>
+    <td class="text-end">${{ load.rate|floatformat:0|intcomma }}</td>
+    <td class="text-end">{{ load.total_miles|intcomma }}</td>
+    <td class="text-end">${{ load.real_rate_per_mile }}</td>
+    <td><span class="badge text-bg-{{ load.status|status_colour }}">{{ load.get_status_display }}</span></td>
+  </tr>
+  {% empty %}<tr><td colspan="8" class="text-center text-body-secondary py-4">No loads found.</td></tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div></div>
+{% if is_paginated %}<nav class="mt-3"><ul class="pagination">
+  {% if page_obj.has_previous %}<li class="page-item"><a class="page-link" href="?page={{ page_obj.previous_page_number }}&status={{ current_status }}&q={{ query|urlencode }}">Previous</a></li>{% endif %}
+  <li class="page-item disabled"><span class="page-link">Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span></li>
+  {% if page_obj.has_next %}<li class="page-item"><a class="page-link" href="?page={{ page_obj.next_page_number }}&status={{ current_status }}&q={{ query|urlencode }}">Next</a></li>{% endif %}
+</ul></nav>{% endif %}
+{% endblock %}

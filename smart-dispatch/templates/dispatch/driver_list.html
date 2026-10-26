@@ -1,0 +1,18 @@
+{% extends "base.html" %}{% load ui %}
+{% block title %}Drivers{% endblock %}
+{% block content %}
+{% include "dispatch/_list_header.html" with heading="Drivers" create_url="driver_create" %}
+<div class="card shadow-sm"><div class="table-responsive">
+<table class="table table-hover mb-0 align-middle">
+  <thead><tr><th>Name</th><th>Phone</th><th>Status</th><th class="text-end">Loads hauled</th><th></th></tr></thead>
+  <tbody>
+  {% for d in object_list %}
+  <tr><td>{{ d }}</td><td>{{ d.phone }}</td>
+    <td><span class="badge text-bg-{{ d.status|status_colour }}">{{ d.get_status_display }}</span></td>
+    <td class="text-end">{{ d.load_count }}</td>
+    <td class="text-end">{% if user.can_edit_operations %}<a class="btn btn-sm btn-outline-primary" href="{% url 'driver_edit' d.pk %}">Edit</a> <a class="btn btn-sm btn-outline-danger" href="{% url 'driver_delete' d.pk %}">Delete</a>{% endif %}</td></tr>
+  {% empty %}<tr><td colspan="5" class="text-center text-body-secondary py-4">No drivers yet.</td></tr>
+  {% endfor %}
+  </tbody>
+</table></div></div>
+{% endblock %}

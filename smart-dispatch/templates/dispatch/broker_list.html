@@ -1,0 +1,19 @@
+{% extends "base.html" %}{% load humanize %}
+{% block title %}Brokers{% endblock %}
+{% block content %}
+{% include "dispatch/_list_header.html" with heading="Brokers" create_url="broker_create" %}
+<div class="card shadow-sm"><div class="table-responsive">
+<table class="table table-hover mb-0 align-middle">
+  <thead><tr><th>Name</th><th>MC #</th><th>Contact</th><th class="text-end">Loads given</th><th class="text-end">Avg $/mi paid</th><th></th></tr></thead>
+  <tbody>
+  {% for b in object_list %}
+  <tr><td>{{ b.name }}</td><td>{{ b.mc_number|default:"—" }}</td>
+    <td class="small">{{ b.contact_email }}{% if b.contact_phone %}<br>{{ b.contact_phone }}{% endif %}</td>
+    <td class="text-end">{{ b.load_count }}</td>
+    <td class="text-end">{% if b.avg_rate_per_mile %}${{ b.avg_rate_per_mile }}{% else %}—{% endif %}</td>
+    <td class="text-end">{% if user.can_edit_operations %}<a class="btn btn-sm btn-outline-primary" href="{% url 'broker_edit' b.pk %}">Edit</a> <a class="btn btn-sm btn-outline-danger" href="{% url 'broker_delete' b.pk %}">Delete</a>{% endif %}</td></tr>
+  {% empty %}<tr><td colspan="6" class="text-center text-body-secondary py-4">No brokers yet.</td></tr>
+  {% endfor %}
+  </tbody>
+</table></div></div>
+{% endblock %}

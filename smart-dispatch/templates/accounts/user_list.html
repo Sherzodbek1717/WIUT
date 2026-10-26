@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block title %}Users{% endblock %}
+{% block content %}
+<h1 class="h3 mb-3">Users</h1>
+<div class="card shadow-sm"><div class="table-responsive">
+<table class="table table-hover mb-0 align-middle">
+  <thead><tr><th>Username</th><th>Name</th><th>Email</th><th>Role</th><th>Active</th><th></th></tr></thead>
+  <tbody>
+  {% for u in object_list %}
+  <tr>
+    <td>{{ u.username }}</td><td>{{ u.get_full_name }}</td><td>{{ u.email }}</td>
+    <td>{{ u.get_role_display }}</td>
+    <td>{% if u.is_active %}<i class="bi bi-check-lg text-success"></i>{% else %}<i class="bi bi-x-lg text-danger"></i>{% endif %}</td>
+    <td class="text-end"><a class="btn btn-sm btn-outline-primary" href="{% url 'user_edit' u.pk %}">Edit</a></td>
+  </tr>
+  {% endfor %}
+  </tbody>
+</table>
+</div></div>
+{% endblock %}

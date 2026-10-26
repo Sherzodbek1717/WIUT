@@ -1,0 +1,17 @@
+{% extends "base.html" %}{% load ui %}
+{% block title %}Trucks{% endblock %}
+{% block content %}
+{% include "dispatch/_list_header.html" with heading="Trucks" create_url="truck_create" %}
+<div class="card shadow-sm"><div class="table-responsive">
+<table class="table table-hover mb-0 align-middle">
+  <thead><tr><th>Unit</th><th>Type</th><th>Status</th><th></th></tr></thead>
+  <tbody>
+  {% for t in object_list %}
+  <tr><td>{{ t.unit_number }}</td><td>{{ t.get_truck_type_display }}</td>
+    <td><span class="badge text-bg-{{ t.status|status_colour }}">{{ t.get_status_display }}</span></td>
+    <td class="text-end">{% if user.can_edit_operations %}<a class="btn btn-sm btn-outline-primary" href="{% url 'truck_edit' t.pk %}">Edit</a> <a class="btn btn-sm btn-outline-danger" href="{% url 'truck_delete' t.pk %}">Delete</a>{% endif %}</td></tr>
+  {% empty %}<tr><td colspan="4" class="text-center text-body-secondary py-4">No trucks yet.</td></tr>
+  {% endfor %}
+  </tbody>
+</table></div></div>
+{% endblock %}

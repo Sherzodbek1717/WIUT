@@ -1,0 +1,38 @@
+{% extends "base.html" %}{% load ui humanize %}
+{% block title %}Reports{% endblock %}
+{% block content %}
+<div class="d-flex flex-wrap justify-content-between align-items-center mb-3 gap-2">
+  <h1 class="h3 mb-0">Weekly report <span class="text-body-secondary fs-6">{{ week_start|date:"M d" }} – {{ week_end|date:"M d, Y" }}</span></h1>
+  <form method="get" class="d-flex gap-2 d-print-none">
+    <input type="week" name="week" value="{{ week_value }}" class="form-control form-control-sm">
+    <button class="btn btn-sm btn-outline-primary">Show</button>
+    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="window.print()"><i class="bi bi-printer"></i></button>
+  </form>
+</div>
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3"><div class="card shadow-sm"><div class="card-body"><div class="small text-body-secondary">Loads</div><div class="stat-value">{{ summary.count }}</div></div></div></div>
+  <div class="col-6 col-md-3"><div class="card shadow-sm"><div class="card-body"><div class="small text-body-secondary">Total miles</div><div class="stat-value">{{ summary.miles|intcomma }}</div></div></div></div>
+  <div class="col-6 col-md-3"><div class="card shadow-sm"><div class="card-body"><div class="small text-body-secondary">Gross</div><div class="stat-value">${{ summary.revenue|floatformat:0|intcomma }}</div></div></div></div>
+  <div class="col-6 col-md-3"><div class="card shadow-sm"><div class="card-body"><div class="small text-body-secondary">Empty miles</div><div class="stat-value">{{ summary.empty_mile_pct }}%</div></div></div></div>
+</div>
+<div class="row g-4 mb-4">
+  <div class="col-md-5"><div class="card shadow-sm"><div class="card-body">
+    <h2 class="h5">Loads by status</h2>
+    <table class="table table-sm mb-0"><tbody>{% for label, n in status_counts %}<tr><td>{{ label }}</td><td class="text-end">{{ n }}</td></tr>{% endfor %}</tbody></table>
+  </div></div></div>
+  <div class="col-md-7"><div class="card shadow-sm"><div class="card-body">
+    <h2 class="h5">Loads per driver</h2>
+    <table class="table table-sm mb-0"><thead><tr><th>Driver</th><th class="text-end">Loads</th><th class="text-end">Miles</th></tr></thead><tbody>
+    {% for d in drivers %}<tr><td>{{ d }}</td><td class="text-end">{{ d.count }}</td><td class="text-end">{{ d.miles|default:0|intcomma }}</td></tr>{% endfor %}
+    </tbody></table>
+  </div></div></div>
+</div>
+<div class="card shadow-sm"><div class="card-body">
+  <h2 class="h5">Loads this week</h2>
+  <div class="table-responsive"><table class="table table-sm mb-0">
+    <thead><tr><th>Pickup</th><th>Lane</th><th>Broker</th><th class="text-end">Rate</th><th class="text-end">Miles</th><th>Status</th></tr></thead><tbody>
+    {% for l in loads %}<tr><td>{{ l.pickup_at|date:"D M d" }}</td><td><a href="{{ l.get_absolute_url }}">{{ l.origin_city }} → {{ l.destination_city }}</a></td><td>{{ l.broker }}</td><td class="text-end">${{ l.rate|floatformat:0|intcomma }}</td><td class="text-end">{{ l.total_miles|intcomma }}</td><td><span class="badge text-bg-{{ l.status|status_colour }}">{{ l.get_status_display }}</span></td></tr>
+    {% empty %}<tr><td colspan="6" class="text-body-secondary">No loads picked up this week.</td></tr>{% endfor %}
+  </tbody></table></div>
+</div></div>
+{% endblock %}

@@ -1,0 +1,23 @@
+{% load ui humanize %}<div class="card shadow-sm result-panel border-{{ result.recommendation|recommendation_colour }}">
+  <div class="card-header bg-{{ result.recommendation|recommendation_colour }}-subtle d-flex justify-content-between align-items-center">
+    <span class="fw-semibold">Decision engine</span>
+    <span class="badge fs-6 text-bg-{{ result.recommendation|recommendation_colour }} text-uppercase">{{ result.recommendation }}</span>
+  </div>
+  <div class="card-body">
+    <div class="row g-3 mb-2">
+      <div class="col-6"><div class="small text-body-secondary">Real rate / mile</div><div class="metric">${{ result.real_rate_per_mile }}</div></div>
+      <div class="col-6"><div class="small text-body-secondary">Posted rate / mile</div><div class="metric">${{ result.posted_rate_per_mile }}</div></div>
+      <div class="col-6"><div class="small text-body-secondary">Est. cost</div><div class="metric">${{ result.estimated_cost|intcomma }}</div></div>
+      <div class="col-6"><div class="small text-body-secondary">Est. profit</div><div class="metric {% if result.estimated_profit < 0 %}text-danger{% else %}text-success{% endif %}">${{ result.estimated_profit|intcomma }}</div></div>
+      <div class="col-6"><div class="small text-body-secondary">Total miles</div><div class="metric">{{ result.total_miles|intcomma }}</div></div>
+      <div class="col-6"><div class="small text-body-secondary">Empty miles</div><div class="metric">{{ result.deadhead_pct }}%</div></div>
+    </div>
+    {% if result.counter_offer %}<div class="alert alert-warning py-2">Counter-offer: <strong>${{ result.counter_offer|floatformat:0|intcomma }}</strong></div>{% endif %}
+    <div class="mb-2">Hours of service:
+      <span class="badge text-bg-{{ result.hos.status|hos_colour }}">{{ result.hos.status }}</span>
+      <span class="small text-body-secondary">needs {{ result.hos.required_transit_hours|floatformat:1 }} h{% if result.hos.available_window_hours is not None %}, window {{ result.hos.available_window_hours|floatformat:1 }} h{% endif %}</span>
+    </div>
+    <ul class="mb-1 small">{% for r in result.reasons %}<li>{{ r }}</li>{% endfor %}</ul>
+    {% for w in result.warnings %}<div class="small text-warning-emphasis"><i class="bi bi-exclamation-triangle"></i> {{ w }}</div>{% endfor %}
+  </div>
+</div>

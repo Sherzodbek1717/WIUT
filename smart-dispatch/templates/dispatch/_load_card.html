@@ -1,0 +1,8 @@
+{% load humanize %}<a href="{{ load.get_absolute_url }}" class="card load-card status-{{ load.status }} mb-2 text-decoration-none shadow-sm">
+  <div class="card-body p-2">
+    <div class="d-flex justify-content-between"><strong>{{ load.lane }}</strong><span>${{ load.rate|floatformat:0|intcomma }}</span></div>
+    <div class="small text-body-secondary">{{ load.origin_city }} → {{ load.destination_city }}</div>
+    <div class="small">{{ load.broker }} · {{ load.pickup_at|date:"M d H:i" }}</div>
+    {% for a in load.assignments.all %}{% if a.active %}<div class="small text-primary"><i class="bi bi-person"></i> {{ a.driver }} · {{ a.truck.unit_number }}</div>{% endif %}{% endfor %}
+  </div>
+</a>

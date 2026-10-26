@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+<h1 class="h3 mb-3">{{ title }}</h1>
+<form method="post" novalidate id="load-form">{% csrf_token %}
+<div class="row g-4">
+  <div class="col-lg-7">
+    <div class="card shadow-sm"><div class="card-body">
+      {% for error in form.non_field_errors %}<div class="alert alert-danger">{{ error }}</div>{% endfor %}
+      <h2 class="h6 text-body-secondary">Offer</h2>
+      <div class="row">
+        <div class="col-md-6">{% with field=form.reference %}{% include "_field.html" %}{% endwith %}</div>
+        <div class="col-md-6">{% with field=form.broker %}{% include "_field.html" %}{% endwith %}</div>
+        <div class="col-md-4">{% with field=form.rate %}{% include "_field.html" %}{% endwith %}</div>
+        <div class="col-md-4">{% with field=form.loaded_miles %}{% include "_field.html" %}{% endwith %}</div>
+        <div class="col-md-4">{% with field=form.deadhead_miles %}{% include "_field.html" %}{% endwith %}</div>
+      </div>
+      <h2 class="h6 text-body-secondary mt-2">Route and schedule</h2>
+      <div class="row">
+        <div class="col-8 col-md-4">{% with field=form.origin_city %}{% include "_field.html" %}{% endwith %}</div>
+        <div class="col-4 col-md-2">{% with field=form.origin_state %}{% include "_field.html" %}{% endwith %}</div>
+        <div class="col-8 col-md-4">{% with field=form.destination_city %}{% include "_field.html" %}{% endwith %}</div>
+        <div class="col-4 col-md-2">{% with field=form.destination_state %}{% include "_field.html" %}{% endwith %}</div>
+        <div class="col-md-6">{% with field=form.pickup_at %}{% include "_field.html" %}{% endwith %}</div>
+        <div class="col-md-6">{% with field=form.delivery_at %}{% include "_field.html" %}{% endwith %}</div>
+        <div class="col-md-6">{% with field=form.commodity %}{% include "_field.html" %}{% endwith %}</div>
+        <div class="col-md-6">{% with field=form.weight_lbs %}{% include "_field.html" %}{% endwith %}</div>
+        <div class="col-md-6">{% with field=form.driver_hours_available %}{% include "_field.html" %}{% endwith %}</div>
+      </div>
+      <button name="evaluate" value="1" class="btn btn-outline-primary">Evaluate</button>
+      <button name="save" value="1" class="btn btn-primary">{% if object %}Save load{% else %}Book load{% endif %}</button>
+      <a class="btn btn-link" href="javascript:history.back()">Cancel</a>
+    </div></div>
+  </div>
+  <div class="col-lg-5">
+    <div id="live-result">
+      {% if result %}{% include "engine/_result.html" %}{% else %}
+      <div class="card shadow-sm"><div class="card-body text-body-secondary">Enter rate, miles and dates to see the recommendation.</div></div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+</form>
+{% endblock %}
+{% block scripts %}
+<script>
+// Live preview: re-run the decision engine through the JSON API as the dispatcher types.
+(function () {
+  const form = document.getElementById("load-form");
+  const panel = document.getElementById("live-result");
+  const csrf = form.querySelector("[name=csrfmiddlewaretoken]").value;
+  const fields = ["rate", "loaded_miles", "deadhead_miles", "pickup_at", "delivery_at", "driver_hours_available"];
+  const colours = {accept: "success", negotiate: "warning", reject: "danger",
+                   feasible: "success", tight: "warning", infeasible: "danger", unknown: "secondary"};
+  const money = (v) => Number(v).toLocaleString("en-US", {minimumFractionDigits: 2, maximumFractionDigits: 2});
+  const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({"&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"}[c]));
+  let timer;
+
+  function render(r) {
+    const c = colours[r.recommendation];
+    const metric = (label, value, cls = "") =>
+      `<div class="col-6"><div class="small text-body-secondary">${label}</div><div class="metric ${cls}">${value}</div></div>`;
+    panel.innerHTML = `
+      <div class="card shadow-sm result-panel border-${c}">
+        <div class="card-header bg-${c}-subtle d-flex justify-content-between align-items-center">
+          <span class="fw-semibold">Decision engine <span class="small text-body-secondary">(live)</span></span>
+          <span class="badge fs-6 text-bg-${c} text-uppercase">${r.recommendation}</span>
+        </div>
+        <div class="card-body">
+          <div class="row g-3 mb-2">
+            ${metric("Real rate / mile", "$" + r.real_rate_per_mile)}
+            ${metric("Posted rate / mile", "$" + r.posted_rate_per_mile)}
+            ${metric("Est. cost", "$" + money(r.estimated_cost))}
+            ${metric("Est. profit", "$" + money(r.estimated_profit), Number(r.estimated_profit) < 0 ? "text-danger" : "text-success")}
+            ${metric("Total miles", r.total_miles.toLocaleString("en-US"))}
+            ${metric("Empty miles", r.deadhead_pct + "%")}
+          </div>
+          ${r.counter_offer ? `<div class="alert alert-warning py-2">Counter-offer: <strong>$${Number(r.counter_offer).toLocaleString("en-US")}</strong></div>` : ""}
+          <div class="mb-2">Hours of service: <span class="badge text-bg-${colours[r.hos.status]}">${r.hos.status}</span>
+            <span class="small text-body-secondary">needs ${r.hos.required_transit_hours} h${r.hos.available_window_hours !== null ? ", window " + r.hos.available_window_hours + " h" : ""}</span></div>
+          <ul class="mb-1 small">${r.reasons.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>
+          ${r.warnings.map((w) => `<div class="small text-warning-emphasis"><i class="bi bi-exclamation-triangle"></i> ${esc(w)}</div>`).join("")}
+        </div>
+      </div>`;
+  }
+
+  function update() {
+    const body = {};
+    fields.forEach((name) => { const el = form.elements[name]; if (el) body[name] = el.value; });
+    if (!body.rate || !body.loaded_miles) return;
+    fetch("{% url 'api_evaluate' %}", {
+      method: "POST",
+      headers: {"Content-Type": "application/json", "X-CSRFToken": csrf},
+      body: JSON.stringify(body),
+    }).then((res) => res.ok ? res.json() : null).then((r) => { if (r) render(r); }).catch(() => {});
+  }
+
+  fields.forEach((name) => {
+    const el = form.elements[name];
+    if (el) el.addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(update, 300); });
+  });
+})();
+</script>
+{% endblock %}
