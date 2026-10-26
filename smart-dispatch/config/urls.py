@@ -29,6 +29,8 @@ urlpatterns = [
     path("drivers/new/", dispatch.DriverCreateView.as_view(), name="driver_create"),
     path("drivers/<int:pk>/edit/", dispatch.DriverUpdateView.as_view(), name="driver_edit"),
     path("drivers/<int:pk>/delete/", dispatch.DriverDeleteView.as_view(), name="driver_delete"),
+    path("drivers/<int:pk>/telegram/", dispatch.driver_telegram, name="driver_telegram"),
+    path("pods/<int:pk>/", dispatch.pod_file, name="pod_file"),
 
     path("trucks/", dispatch.TruckListView.as_view(), name="truck_list"),
     path("trucks/new/", dispatch.TruckCreateView.as_view(), name="truck_create"),

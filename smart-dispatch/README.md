@@ -37,10 +37,44 @@ Open http://127.0.0.1:8000 and log in as `dispatcher`, `manager` or `admin`
 | Analytics dashboard: best lanes, best brokers, empty-mile %, weekly gross and profit | `/dashboard/`, `analytics/metrics.py` |
 | Reports: loads by status, loads per driver, total miles for a selected week | `/reports/` |
 | REST API layer | `POST /api/evaluate/` (used by the live engine panel) |
-| Black-box testing | `tests/` (26 tests) |
+| Telegram bot: driver status updates and POD collection | `telegram_bot/` |
+| Black-box testing | `tests/` (41 tests) |
 | Anonymised test data | `python manage.py seed_demo` |
 
-Not built yet: the Telegram bot for driver updates and POD collection (a should-have in the PID).
+## Telegram bot for drivers
+
+Drivers use Telegram instead of logging in to the web app. They can:
+
+- get a message with the load details when the dispatcher assigns them a load,
+- send `/load` to see their current load,
+- tap **Picked up – in transit** and **Delivered** to update its status (same rules as the web app),
+- send a **photo or PDF of the signed POD**, which appears on the load page under "Proof of delivery".
+  PODs sent up to 72 hours after delivery attach to that delivered load.
+
+### Set it up
+
+1. In Telegram, open **@BotFather**, send `/newbot`, and follow the steps. Copy the **token** and the bot's **username**.
+2. Set them as environment variables, in the same terminal where you run the commands.
+
+   Windows (Command Prompt):
+   ```bat
+   set TELEGRAM_BOT_TOKEN=123456:ABC-your-token
+   set TELEGRAM_BOT_USERNAME=your_bot_username
+   ```
+   macOS / Linux: `export TELEGRAM_BOT_TOKEN=...` and `export TELEGRAM_BOT_USERNAME=...`
+3. Run the web app and the bot in **two terminals** (set the variables in both):
+   ```bash
+   python manage.py runserver
+   python manage.py run_telegram_bot
+   ```
+4. In the web app go to **Drivers → Not linked → Create link code**. Open the `t.me/...` link on the
+   driver's phone (or send `/start CODE` to the bot). The driver is now linked.
+5. Dispatch a load to that driver: the bot sends them the load.
+
+Never commit the bot token to GitHub. If it leaks, revoke it with @BotFather (`/revoke`).
+
+The bot uses long polling, so it works on a laptop without a public URL. It talks to the
+Telegram Bot API with Python's standard library, so it needs no extra packages.
 
 ## Architecture
 
@@ -48,10 +82,11 @@ Layered, as in the PID:
 
 - **Presentation**: Django templates, Bootstrap 5, Chart.js (`templates/`)
 - **Application / API**: Django views and a JSON endpoint (`*/views.py`, `config/urls.py`)
+- **Driver channel**: Telegram bot (`telegram_bot/`), which reuses the same business-logic layer
 - **Business logic**: `engine/core.py` (pure Python, no Django imports, so it is unit-tested on its own) and `dispatch/services.py` (assignment and status rules)
 - **Data**: relational models (`*/models.py`), SQLite in development; switch to PostgreSQL in `config/settings.py`
 
-Entities: User, Broker, Driver, Truck, Load, Assignment, CompanySettings.
+Entities: User, Broker, Driver, Truck, Load, Assignment, ProofOfDelivery, CompanySettings.
 Broker "average rate per mile" and "number of loads" are calculated from loads
 rather than stored, so they can't fall out of date.
 

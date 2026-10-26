@@ -52,6 +52,17 @@
       {% endif %}
     </div></div>
   </div>
-  <div class="col-lg-5">{% include "engine/_result.html" %}</div>
+  <div class="col-lg-5">
+    {% include "engine/_result.html" %}
+    <div class="card shadow-sm mt-4"><div class="card-body">
+      <h2 class="h5">Proof of delivery</h2>
+      {% for pod in pods %}
+      <div class="d-flex justify-content-between small border-bottom py-1">
+        <a href="{% url 'pod_file' pod.pk %}" target="_blank"><i class="bi bi-file-earmark-image"></i> {{ pod.original_name|default:"POD file" }}</a>
+        <span class="text-body-secondary">{{ pod.driver|default:"" }} · {{ pod.uploaded_at|date:"M d H:i" }}</span>
+      </div>
+      {% empty %}<p class="small text-body-secondary mb-0">No POD yet. The driver can send a photo to the Telegram bot.</p>{% endfor %}
+    </div></div>
+  </div>
 </div>
 {% endblock %}

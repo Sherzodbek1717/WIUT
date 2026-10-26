@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Telegram · {{ driver }}{% endblock %}
+{% block content %}
+<div class="row justify-content-center"><div class="col-lg-6">
+  <div class="card shadow-sm"><div class="card-body">
+    <h1 class="h4"><i class="bi bi-telegram text-primary"></i> Telegram for {{ driver }}</h1>
+    {% if not bot_configured %}
+    <div class="alert alert-warning small">The bot is not configured. Set <code>TELEGRAM_BOT_TOKEN</code> and <code>TELEGRAM_BOT_USERNAME</code>, then run <code>python manage.py run_telegram_bot</code>.</div>
+    {% endif %}
+    {% if driver.telegram_linked %}
+      <p class="text-success"><i class="bi bi-check-circle"></i> Linked. The driver gets new loads in Telegram, can update status and send POD photos.</p>
+    {% else %}
+      <p class="text-body-secondary">Not linked yet.</p>
+    {% endif %}
+
+    {% if driver.telegram_link_code %}
+      <div class="border rounded p-3 mb-3 bg-body-tertiary">
+        <div class="small text-body-secondary">One-time link code</div>
+        <div class="fs-3 fw-bold font-monospace">{{ driver.telegram_link_code }}</div>
+        {% if deep_link %}
+          <div class="small mt-2">Send the driver this link: <a href="{{ deep_link }}" target="_blank">{{ deep_link }}</a></div>
+        {% else %}
+          <div class="small mt-2">The driver opens the bot{% if bot_username %} @{{ bot_username }}{% endif %} and sends <code>/start {{ driver.telegram_link_code }}</code>.</div>
+        {% endif %}
+      </div>
+    {% endif %}
+
+    {% if user.can_edit_operations %}
+    <form method="post" class="d-flex gap-2">{% csrf_token %}
+      <button name="action" value="code" class="btn btn-primary">{% if driver.telegram_link_code %}New code{% else %}Create link code{% endif %}</button>
+      {% if driver.telegram_linked %}<button name="action" value="unlink" class="btn btn-outline-danger">Unlink</button>{% endif %}
+      <a class="btn btn-link" href="{% url 'driver_list' %}">Back to drivers</a>
+    </form>
+    {% endif %}
+  </div></div>
+</div></div>
+{% endblock %}

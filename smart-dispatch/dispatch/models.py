@@ -1,3 +1,4 @@
+import secrets
 from decimal import Decimal
 
 from django.conf import settings
@@ -43,12 +44,35 @@ class Driver(models.Model):
     last_name = models.CharField(max_length=60)
     phone = models.CharField(max_length=30)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.AVAILABLE)
+    telegram_chat_id = models.BigIntegerField(null=True, blank=True, unique=True)
+    telegram_link_code = models.CharField(max_length=12, null=True, blank=True, unique=True)
 
     class Meta:
         ordering = ["first_name", "last_name"]
 
     def get_absolute_url(self):
         return reverse("driver_list")
+
+    @property
+    def telegram_linked(self):
+        return self.telegram_chat_id is not None
+
+    def new_telegram_link_code(self):
+        """One-time code the driver sends to the bot (/start CODE) to link their chat."""
+        self.telegram_link_code = secrets.token_hex(4).upper()
+        self.save(update_fields=["telegram_link_code"])
+        return self.telegram_link_code
+
+    def current_load(self):
+        """The load the driver is working now (dispatched or in transit), if any."""
+        assignment = (
+            self.assignments.filter(
+                active=True, load__status__in=[Load.Status.DISPATCHED, Load.Status.IN_TRANSIT]
+            )
+            .select_related("load", "load__broker", "truck")
+            .first()
+        )
+        return assignment.load if assignment else None
 
     def __str__(self):
         return f"{self.first_name} {self.last_name}"
@@ -187,3 +211,21 @@ class Assignment(models.Model):
 
     def __str__(self):
         return f"{self.load} → {self.driver} / {self.truck}"
+
+
+class ProofOfDelivery(models.Model):
+    """Signed POD photo or document, usually sent by the driver through the Telegram bot."""
+
+    load = models.ForeignKey(Load, on_delete=models.CASCADE, related_name="pods")
+    driver = models.ForeignKey(Driver, on_delete=models.SET_NULL, null=True, related_name="pods")
+    file = models.FileField(upload_to="pod/%Y/%m/")
+    original_name = models.CharField(max_length=200, blank=True)
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ["-uploaded_at"]
+        verbose_name = "proof of delivery"
+        verbose_name_plural = "proofs of delivery"
+
+    def __str__(self):
+        return f"POD for {self.load} ({self.uploaded_at:%Y-%m-%d})"

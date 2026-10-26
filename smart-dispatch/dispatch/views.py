@@ -1,10 +1,11 @@
 from decimal import Decimal
 
+from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Count, F, ProtectedError, Q, Sum
-from django.http import HttpResponseForbidden
+from django.http import FileResponse, Http404, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
 from django.utils.http import url_has_allowed_host_and_scheme
@@ -14,9 +15,10 @@ from django.views.generic import CreateView, DeleteView, DetailView, ListView, U
 from accounts.permissions import OperationsEditMixin
 from engine.core import LoadOffer, evaluate
 from engine.models import CompanySettings
+from telegram_bot.notifications import notify_assignment
 
 from .forms import AssignForm, BrokerForm, DriverForm, LoadForm, TruckForm
-from .models import Broker, Driver, Load, Truck
+from .models import Broker, Driver, Load, ProofOfDelivery, Truck
 from .services import ALLOWED_TRANSITIONS, DispatchError, assign_load, change_status
 
 
@@ -227,6 +229,7 @@ class LoadDetailView(LoginRequiredMixin, DetailView):
             result=load.evaluate(),
             assignment=load.active_assignment,
             history=load.assignments.select_related("driver", "truck", "assigned_by"),
+            pods=load.pods.select_related("driver"),
             assign_form=AssignForm(load=load) if load.status in (Load.Status.AVAILABLE, Load.Status.DISPATCHED) else None,
             next_statuses=[s for s in Load.Status if s in ALLOWED_TRANSITIONS[load.status]],
             **kwargs,
@@ -242,8 +245,11 @@ def load_assign(request, pk):
     form = AssignForm(request.POST, load=load)
     if form.is_valid():
         try:
-            assign_load(load, form.cleaned_data["driver"], form.cleaned_data["truck"], request.user)
-            messages.success(request, "Load dispatched.")
+            assignment = assign_load(load, form.cleaned_data["driver"], form.cleaned_data["truck"], request.user)
+            if notify_assignment(assignment):
+                messages.success(request, f"Load dispatched. {assignment.driver} was notified on Telegram.")
+            else:
+                messages.success(request, "Load dispatched.")
         except DispatchError as exc:
             messages.error(request, str(exc))
     else:
@@ -266,3 +272,37 @@ def load_status(request, pk):
     if url_has_allowed_host_and_scheme(next_url, allowed_hosts={request.get_host()}):
         return redirect(next_url)
     return redirect(load)
+
+
+@login_required
+def driver_telegram(request, pk):
+    """Show a driver's Telegram link status; dispatchers create a one-time link code or unlink."""
+    driver = get_object_or_404(Driver, pk=pk)
+    if request.method == "POST":
+        if not request.user.can_edit_operations:
+            return HttpResponseForbidden()
+        if request.POST.get("action") == "unlink":
+            driver.telegram_chat_id = None
+            driver.telegram_link_code = None
+            driver.save(update_fields=["telegram_chat_id", "telegram_link_code"])
+            messages.success(request, f"{driver} unlinked from Telegram.")
+        else:
+            driver.new_telegram_link_code()
+        return redirect("driver_telegram", pk=driver.pk)
+
+    bot = settings.TELEGRAM_BOT_USERNAME
+    link = f"https://t.me/{bot}?start={driver.telegram_link_code}" if bot and driver.telegram_link_code else None
+    return render(request, "dispatch/driver_telegram.html", {
+        "driver": driver, "bot_username": bot, "deep_link": link,
+        "bot_configured": bool(settings.TELEGRAM_BOT_TOKEN),
+    })
+
+
+@login_required
+def pod_file(request, pk):
+    """Serve a POD file to logged-in users only (files are not public)."""
+    pod = get_object_or_404(ProofOfDelivery, pk=pk)
+    try:
+        return FileResponse(pod.file.open("rb"), filename=pod.original_name or None)
+    except FileNotFoundError:
+        raise Http404("File missing.")

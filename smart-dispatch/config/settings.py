@@ -22,6 +22,7 @@ INSTALLED_APPS = [
     "dispatch",
     "engine",
     "analytics",
+    "telegram_bot",
 ]
 
 MIDDLEWARE = [
@@ -84,3 +85,11 @@ STATIC_URL = "static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
+
+# Uploaded files (POD photos). Served only through a login-protected view.
+MEDIA_ROOT = BASE_DIR / "media"
+
+# Telegram bot for drivers. Create a bot with @BotFather, then set these
+# environment variables before running `python manage.py run_telegram_bot`.
+TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN", "")
+TELEGRAM_BOT_USERNAME = os.environ.get("TELEGRAM_BOT_USERNAME", "")

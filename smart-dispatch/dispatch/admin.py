@@ -1,10 +1,11 @@
 from django.contrib import admin
 
-from .models import Assignment, Broker, Driver, Load, Truck
+from .models import Assignment, Broker, Driver, Load, ProofOfDelivery, Truck
 
 admin.site.register(Broker)
 admin.site.register(Driver)
 admin.site.register(Truck)
+admin.site.register(ProofOfDelivery)
 
 
 @admin.register(Load)
