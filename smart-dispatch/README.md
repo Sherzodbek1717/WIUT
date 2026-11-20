@@ -9,20 +9,91 @@ managers an **analytics dashboard** of lanes, brokers, empty miles and weekly pr
 
 ![Load offer with live decision engine](docs/screenshots/offer.png)
 
-## Run it
+## How to run it on Windows (step by step)
 
-```bash
-cd smart-dispatch
-python3 -m venv .venv
-source .venv/bin/activate          # Windows: .venv\Scripts\activate
+You need **Python 3.10 or newer** from [python.org](https://www.python.org/downloads/).
+When installing, tick **"Add Python to PATH"**.
+
+### Step 1: Open Command Prompt
+
+Press the **Windows key**, type **cmd**, and press Enter. You will see something like
+`C:\Users\YourName>`. Type every command below here.
+
+> If you see `>>>`, you are inside Python, not Command Prompt. Type `exit()` and press Enter first.
+> Commands like `python --version` and `pip install` do not work at the `>>>` prompt.
+
+Check Python works:
+
+```bat
+python --version
+```
+
+If `python` is not found, try `py --version` and use `py` wherever these steps say `python`.
+
+### Step 2: Get the project
+
+**With Git:**
+
+```bat
+git clone -b claude/cool-goldberg-czu1lr https://github.com/Sherzodbek1717/WIUT.git
+cd WIUT\smart-dispatch
+```
+
+**Without Git** (if you get *'git' is not recognized*):
+
+1. Download the [project zip](https://github.com/Sherzodbek1717/WIUT/archive/refs/heads/claude/cool-goldberg-czu1lr.zip).
+2. Right-click the zip, choose **Extract All**.
+3. In Command Prompt, type `cd ` (with a space), drag the **smart-dispatch** folder into the window, and press Enter.
+
+### Step 3: Install and start
+
+Run these one at a time and wait for each to finish:
+
+```bat
+python -m venv .venv
+.venv\Scripts\activate
 pip install -r requirements.txt
 python manage.py migrate
-python manage.py seed_demo --reset # anonymised demo data
+python manage.py seed_demo --reset
 python manage.py runserver
 ```
 
-Open http://127.0.0.1:8000 and log in as `dispatcher`, `manager` or `admin`
-(password `demo12345`). Run the tests with `python manage.py test tests`.
+After `activate`, the prompt starts with `(.venv)`. That means it worked.
+
+### Step 4: Open the app
+
+When you see `Starting development server at http://127.0.0.1:8000/`, open
+**http://127.0.0.1:8000** in your browser and log in:
+
+| Username | Password | What they see |
+|---|---|---|
+| `dispatcher` | `demo12345` | Board, loads, new load offers |
+| `manager` | `demo12345` | Dashboard and reports |
+| `admin` | `demo12345` | Everything, plus users and settings |
+
+Keep the Command Prompt window open while you use the app. Closing it (or pressing **Ctrl+C**) stops the server.
+
+### Next time
+
+You only install once. To start the app again:
+
+```bat
+cd WIUT\smart-dispatch
+.venv\Scripts\activate
+python manage.py runserver
+```
+
+After pulling new code, also run `python manage.py migrate`.
+
+### macOS / Linux
+
+Same steps, but use `python3 -m venv .venv` and `source .venv/bin/activate`.
+
+### Run the tests
+
+```bat
+python manage.py test tests
+```
 
 ## How it maps to the PID
 

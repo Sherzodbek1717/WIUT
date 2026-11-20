@@ -13,3 +13,8 @@ run then cancel
 
 ctl + H = replace
 
+
+## Smart Dispatch (BIS project)
+
+The dissertation app is in the [`smart-dispatch`](smart-dispatch/) folder.
+See [smart-dispatch/README.md](smart-dispatch/README.md) for step-by-step instructions to run it on Windows.
