@@ -23,6 +23,7 @@ INSTALLED_APPS = [
     "engine",
     "analytics",
     "telegram_bot",
+    "loadboard",
 ]
 
 MIDDLEWARE = [

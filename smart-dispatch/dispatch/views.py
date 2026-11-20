@@ -3,7 +3,6 @@ from decimal import Decimal
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.contrib.auth.mixins import LoginRequiredMixin
 from django.db.models import Count, F, ProtectedError, Q, Sum
 from django.http import FileResponse, Http404, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
@@ -12,7 +11,7 @@ from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
 from django.views.generic import CreateView, DeleteView, DetailView, ListView, UpdateView
 
-from accounts.permissions import OperationsEditMixin
+from accounts.permissions import OperationsEditMixin, TmsMixin, tms_required
 from engine.core import LoadOffer, evaluate
 from engine.models import CompanySettings
 from telegram_bot.notifications import notify_assignment
@@ -24,12 +23,15 @@ from .services import ALLOWED_TRANSITIONS, DispatchError, assign_load, change_st
 
 @login_required
 def home(request):
-    if request.user.can_view_analytics and not request.user.can_edit_operations:
+    user = request.user
+    if user.is_broker:
+        return redirect("truck_search")
+    if user.can_view_analytics and not user.can_edit_operations:
         return redirect("dashboard")
-    return redirect("board")
+    return redirect("load_search")
 
 
-@login_required
+@tms_required
 def board(request):
     loads = Load.objects.select_related("broker").prefetch_related("assignments__driver", "assignments__truck")
     columns = []
@@ -70,7 +72,7 @@ class RecordDeleteView(OperationsEditMixin, DeleteView):
         return response
 
 
-class BrokerListView(LoginRequiredMixin, ListView):
+class BrokerListView(TmsMixin, ListView):
     template_name = "dispatch/broker_list.html"
 
     def get_queryset(self):
@@ -101,7 +103,7 @@ class BrokerDeleteView(RecordDeleteView):
     model, success_url = Broker, reverse_lazy("broker_list")
 
 
-class DriverListView(LoginRequiredMixin, ListView):
+class DriverListView(TmsMixin, ListView):
     template_name = "dispatch/driver_list.html"
 
     def get_queryset(self):
@@ -122,7 +124,7 @@ class DriverDeleteView(RecordDeleteView):
     model, success_url = Driver, reverse_lazy("driver_list")
 
 
-class TruckListView(LoginRequiredMixin, ListView):
+class TruckListView(TmsMixin, ListView):
     model = Truck
     template_name = "dispatch/truck_list.html"
 
@@ -141,7 +143,7 @@ class TruckDeleteView(RecordDeleteView):
 
 # --- Loads -------------------------------------------------------------------
 
-class LoadListView(LoginRequiredMixin, ListView):
+class LoadListView(TmsMixin, ListView):
     template_name = "dispatch/load_list.html"
     paginate_by = 25
 
@@ -219,7 +221,7 @@ class LoadDeleteView(RecordDeleteView):
         return super().form_valid(form)
 
 
-class LoadDetailView(LoginRequiredMixin, DetailView):
+class LoadDetailView(TmsMixin, DetailView):
     template_name = "dispatch/load_detail.html"
     queryset = Load.objects.select_related("broker", "created_by")
 
@@ -274,7 +276,7 @@ def load_status(request, pk):
     return redirect(load)
 
 
-@login_required
+@tms_required
 def driver_telegram(request, pk):
     """Show a driver's Telegram link status; dispatchers create a one-time link code or unlink."""
     driver = get_object_or_404(Driver, pk=pk)
@@ -298,7 +300,7 @@ def driver_telegram(request, pk):
     })
 
 
-@login_required
+@tms_required
 def pod_file(request, pk):
     """Serve a POD file to logged-in users only (files are not public)."""
     pod = get_object_or_404(ProofOfDelivery, pk=pk)

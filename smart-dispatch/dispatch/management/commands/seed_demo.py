@@ -8,6 +8,7 @@ import random
 from datetime import timedelta
 from decimal import Decimal
 
+from django.core.management import call_command
 from django.core.management.base import BaseCommand
 from django.db import transaction
 from django.utils import timezone
@@ -49,7 +50,8 @@ class Command(BaseCommand):
         for username, role in (("admin", User.Role.ADMIN), ("dispatcher", User.Role.DISPATCHER), ("manager", User.Role.MANAGER)):
             user, created = User.objects.get_or_create(
                 username=username,
-                defaults={"email": f"{username}@example.com", "role": role,
+                defaults={"email": f"{username}@example.com", "role": role, "company_name": "Demo Carrier LLC",
+                          "phone": "(555) 010-1000",
                           "first_name": username.capitalize(), "is_staff": role == User.Role.ADMIN,
                           "is_superuser": role == User.Role.ADMIN},
             )
@@ -99,6 +101,7 @@ class Command(BaseCommand):
             self._make_load(rng, brokers, broker_rpm, now + timedelta(hours=rng.randint(24, 72)), dispatcher)
             count += 1
 
+        call_command("seed_marketplace", stdout=self.stdout)
         self.stdout.write(self.style.SUCCESS(
             f"Seeded {count} loads. Log in as admin, dispatcher or manager with password '{DEMO_PASSWORD}'."
         ))

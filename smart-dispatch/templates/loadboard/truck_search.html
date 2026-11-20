@@ -1,0 +1,62 @@
+{% extends "base.html" %}{% load ui humanize %}
+{% block title %}Search Trucks{% endblock %}
+{% block content %}
+<h1 class="page-title">Search Trucks</h1>
+{% include "loadboard/_city_datalist.html" %}
+<form method="get" class="search-panel mb-3" novalidate>
+  <div class="row g-2">
+    <div class="col-9 col-lg-4">{% with field=form.origin %}{% include "loadboard/_search_field.html" %}{% endwith %}</div>
+    <div class="col-3 col-lg-1">{% with field=form.dh_o %}{% include "loadboard/_search_field.html" %}{% endwith %}</div>
+    <div class="col-9 col-lg-4">{% with field=form.destination %}{% include "loadboard/_search_field.html" %}{% endwith %}</div>
+    <div class="col-3 col-lg-1">{% with field=form.dh_d %}{% include "loadboard/_search_field.html" %}{% endwith %}</div>
+  </div>
+  <div class="row g-2 mt-1 align-items-end">
+    <div class="col-6 col-md-3 col-xl-2">{% with field=form.equipment %}{% include "loadboard/_search_field.html" %}{% endwith %}</div>
+    <div class="col-6 col-md-3 col-xl-2">{% with field=form.driver_type %}{% include "loadboard/_search_field.html" %}{% endwith %}</div>
+    <div class="col-6 col-md-3 col-xl-2">{% with field=form.date_from %}{% include "loadboard/_search_field.html" %}{% endwith %}</div>
+    <div class="col-6 col-md-3 col-xl-2">{% with field=form.date_to %}{% include "loadboard/_search_field.html" %}{% endwith %}</div>
+    <div class="col-12 col-xl-2 d-flex gap-2">
+      <button class="btn btn-search flex-grow-1"><i class="bi bi-search"></i> Search</button>
+      <a class="btn btn-light border" href="{% url 'truck_search' %}" title="Clear" aria-label="Clear search"><i class="bi bi-x-lg"></i></a>
+    </div>
+  </div>
+</form>
+
+{% if not searched %}
+  {% if not form.errors %}
+    {% include "loadboard/_recent.html" with icon="truck-front" heading="Ready to search trucks" hint="Find empty trucks near your pickup." %}
+  {% endif %}
+{% else %}
+  <div class="fs-5 fw-bold mb-2">{{ total }} result{{ total|pluralize }}</div>
+  {% if results %}
+  <div class="results-card shadow-sm"><div class="table-responsive">
+  <table class="table results-table">
+    <thead><tr>
+      <th>Age</th><th>Available</th><th>Origin</th><th class="text-end">DH-O</th><th></th><th>Destination</th>
+      <th>EQ</th><th class="text-end">Length</th><th class="text-end">Weight</th><th>Capacity</th><th>Company</th><th>Contact</th>
+    </tr></thead>
+    <tbody>
+    {% for r in results %}{% with p=r.posting %}
+    <tr class="no-click">
+      <td class="text-body-secondary">{{ p.posted_at|age }}</td>
+      <td>{{ p.available_from|date:"m/d" }}{% if p.available_to != p.available_from %} – {{ p.available_to|date:"m/d" }}{% endif %}</td>
+      <td class="fw-semibold">{{ p.origin_label }}</td>
+      <td class="text-end dh">({{ r.dh_o }})</td>
+      <td class="text-primary"><i class="bi bi-arrow-right"></i></td>
+      <td class="fw-semibold">{{ p.destination_label }}{% if r.dh_d is not None %} <span class="dh">({{ r.dh_d }})</span>{% endif %}</td>
+      <td>{{ p.equipment }}{% if p.team %} <span class="badge text-bg-info">Team</span>{% endif %}</td>
+      <td class="text-end">{{ p.length_ft }} ft</td>
+      <td class="text-end">{{ p.max_weight_lbs|intcomma }} lbs</td>
+      <td>{{ p.get_load_type_display }}</td>
+      <td class="text-primary">{{ p.company_name }}</td>
+      <td class="small">{% if p.contact_phone %}<a href="tel:{{ p.contact_phone }}">{{ p.contact_phone }}</a>{% else %}<a href="mailto:{{ p.contact_email }}">{{ p.contact_email }}</a>{% endif %}</td>
+    </tr>
+    {% endwith %}{% endfor %}
+    </tbody>
+  </table>
+  </div></div>
+  {% else %}
+  <div class="empty-state"><i class="bi bi-inbox"></i><div class="mt-2">No trucks match. Try a bigger DH-O or other dates.</div></div>
+  {% endif %}
+{% endif %}
+{% endblock %}

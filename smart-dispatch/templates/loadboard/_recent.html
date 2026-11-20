@@ -1,0 +1,16 @@
+<div class="empty-state">
+  <i class="bi bi-{{ icon }}"></i>
+  <div class="fs-5 fw-semibold text-body mt-2">{{ heading }}</div>
+  <div>{{ hint }}</div>
+</div>
+{% if recent %}
+<div class="card shadow-sm recent-card"><div class="card-body">
+  <h2 class="h6 fw-bold"><i class="bi bi-clock-history"></i> Recent searches</h2>
+  {% for r in recent %}
+  <a href="?{{ r.query }}">
+    <span class="badge rounded-pill text-bg-light border"><i class="bi bi-search"></i></span>
+    <span><span class="fw-semibold">{{ r.label }}</span><br><span class="small text-body-secondary">{{ r.searched_at|date:"M d, H:i" }}</span></span>
+  </a>
+  {% endfor %}
+</div></div>
+{% endif %}

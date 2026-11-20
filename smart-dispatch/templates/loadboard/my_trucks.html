@@ -1,0 +1,31 @@
+{% extends "base.html" %}{% load ui humanize %}
+{% block title %}My Truck Posts{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="page-title mb-0">My Truck Posts</h1>
+  <a class="btn btn-search" href="{% url 'post_truck' %}"><i class="bi bi-plus-lg"></i> Post a truck</a>
+</div>
+<p class="text-body-secondary small">Post your empty trucks so brokers can find you in Search Trucks.</p>
+<div class="results-card shadow-sm"><div class="table-responsive">
+<table class="table results-table">
+  <thead><tr><th>Posted</th><th>Available</th><th>Location</th><th>Wants to go</th><th>EQ</th><th>Truck</th><th>Status</th><th></th></tr></thead>
+  <tbody>
+  {% for p in postings %}
+  <tr class="no-click">
+    <td class="text-body-secondary">{{ p.posted_at|age }} ago</td>
+    <td>{{ p.available_from|date:"M d" }} – {{ p.available_to|date:"M d" }}</td>
+    <td class="fw-semibold">{{ p.origin_label }}</td>
+    <td>{{ p.destination_label }}</td>
+    <td>{{ p.get_equipment_display }}{% if p.team %}, team{% endif %}</td>
+    <td>{{ p.truck.unit_number|default:"—" }}</td>
+    <td>{% if not p.active %}<span class="badge text-bg-secondary">Removed</span>{% elif p.available_to < today %}<span class="badge text-bg-secondary">Expired</span>{% else %}<span class="badge text-bg-primary">Live</span>{% endif %}</td>
+    <td class="text-end">
+      <a class="btn btn-sm btn-outline-primary" href="{% url 'edit_truck_posting' p.pk %}">{% if p.active %}Edit{% else %}Repost{% endif %}</a>
+      {% if p.active %}<form method="post" action="{% url 'remove_truck_posting' p.pk %}" class="d-inline">{% csrf_token %}<button class="btn btn-sm btn-outline-danger">Remove</button></form>{% endif %}
+    </td>
+  </tr>
+  {% empty %}<tr class="no-click"><td colspan="8" class="text-center text-body-secondary py-4">No truck posts yet.</td></tr>
+  {% endfor %}
+  </tbody>
+</table></div></div>
+{% endblock %}

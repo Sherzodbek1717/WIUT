@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+{% block title %}{{ title }}{% endblock %}
+{% block content %}
+{% include "loadboard/_city_datalist.html" %}
+<div class="row justify-content-center"><div class="col-xl-8">
+  <h1 class="page-title">{{ title }}</h1>
+  <form method="post" class="card shadow-sm" novalidate>{% csrf_token %}<div class="card-body">
+    {% for error in form.non_field_errors %}<div class="alert alert-danger">{{ error }}</div>{% endfor %}
+    <div class="row">
+      {% for field in form %}
+      <div class="{% if field.name == 'comments' %}col-12{% else %}col-md-6{% endif %}">{% include "_field.html" %}</div>
+      {% endfor %}
+    </div>
+    <button class="btn btn-search">Post</button>
+    <a class="btn btn-link" href="javascript:history.back()">Cancel</a>
+  </div></form>
+</div></div>
+{% endblock %}

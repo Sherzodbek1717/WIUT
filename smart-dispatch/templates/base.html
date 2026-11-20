@@ -8,49 +8,85 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <link rel="stylesheet" href="{% static 'app.css' %}">
 </head>
-<body class="bg-body-tertiary">
-<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
-  <div class="container-fluid">
-    <a class="navbar-brand fw-semibold" href="{% url 'home' %}"><i class="bi bi-truck"></i> Smart Dispatch</a>
-    {% if user.is_authenticated %}
-    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#nav" aria-label="Menu">
-      <span class="navbar-toggler-icon"></span>
-    </button>
-    <div class="collapse navbar-collapse" id="nav">
-      <ul class="navbar-nav me-auto">
-        <li class="nav-item"><a class="nav-link" href="{% url 'board' %}">Board</a></li>
-        <li class="nav-item"><a class="nav-link" href="{% url 'load_list' %}">Loads</a></li>
-        <li class="nav-item"><a class="nav-link" href="{% url 'driver_list' %}">Drivers</a></li>
-        <li class="nav-item"><a class="nav-link" href="{% url 'truck_list' %}">Trucks</a></li>
-        <li class="nav-item"><a class="nav-link" href="{% url 'broker_list' %}">Brokers</a></li>
-        {% if user.can_view_analytics %}
-        <li class="nav-item"><a class="nav-link" href="{% url 'dashboard' %}">Dashboard</a></li>
-        <li class="nav-item"><a class="nav-link" href="{% url 'reports' %}">Reports</a></li>
-        {% endif %}
-        {% if user.is_platform_admin %}
-        <li class="nav-item"><a class="nav-link" href="{% url 'user_list' %}">Users</a></li>
-        <li class="nav-item"><a class="nav-link" href="{% url 'engine_settings' %}">Settings</a></li>
-        {% endif %}
-      </ul>
-      {% if user.can_edit_operations %}
-      <a class="btn btn-success btn-sm me-3" href="{% url 'load_create' %}"><i class="bi bi-plus-lg"></i> New load offer</a>
+<body>
+{% if user.is_authenticated %}
+<div class="app-shell">
+  <aside class="sidebar offcanvas-lg offcanvas-start" tabindex="-1" id="sidebar" aria-label="Main menu">
+    <div class="sidebar-brand d-flex align-items-center justify-content-between">
+      <a href="{% url 'home' %}"><i class="bi bi-truck-front-fill"></i> Smart Dispatch</a>
+      <button type="button" class="btn-close btn-close-white d-lg-none" data-bs-dismiss="offcanvas" data-bs-target="#sidebar" aria-label="Close"></button>
+    </div>
+    <nav class="sidebar-nav">
+      {% with path=request.path %}
+      <div class="sidebar-section">Marketplace</div>
+      {% if not user.is_broker %}
+      <a class="{% if path == '/loads/search/' %}active{% endif %}" href="{% url 'load_search' %}"><i class="bi bi-search"></i> Search Loads</a>
       {% endif %}
-      <span class="navbar-text me-3 small">{{ user }} · {{ user.get_role_display }}</span>
+      <a class="{% if path == '/trucks/search/' %}active{% endif %}" href="{% url 'truck_search' %}"><i class="bi bi-truck"></i> Search Trucks</a>
+      {% if user.can_edit_operations %}
+      <a class="{% if '/my-trucks/' in path %}active{% endif %}" href="{% url 'my_trucks' %}"><i class="bi bi-signpost-2"></i> My Truck Posts</a>
+      {% endif %}
+      {% if user.can_post_loads %}
+      <a class="{% if '/my-loads/' in path %}active{% endif %}" href="{% url 'my_loads' %}"><i class="bi bi-box-seam"></i> My Load Posts</a>
+      {% endif %}
+
+      {% if user.can_use_tms %}
+      <div class="sidebar-section">My fleet</div>
+      <a class="{% if path == '/board/' %}active{% endif %}" href="{% url 'board' %}"><i class="bi bi-kanban"></i> Status Board</a>
+      <a class="{% if path == '/loads/' or '/loads/' in path and 'search' not in path %}active{% endif %}" href="{% url 'load_list' %}"><i class="bi bi-list-check"></i> Booked Loads</a>
+      <a class="{% if '/drivers/' in path %}active{% endif %}" href="{% url 'driver_list' %}"><i class="bi bi-person-badge"></i> Drivers</a>
+      <a class="{% if path == '/trucks/' or '/trucks/' in path and 'search' not in path %}active{% endif %}" href="{% url 'truck_list' %}"><i class="bi bi-truck-flatbed"></i> Trucks</a>
+      <a class="{% if '/brokers/' in path %}active{% endif %}" href="{% url 'broker_list' %}"><i class="bi bi-building"></i> Brokers</a>
+      {% endif %}
+
+      {% if user.can_view_analytics %}
+      <div class="sidebar-section">Analytics</div>
+      <a class="{% if '/dashboard/' in path %}active{% endif %}" href="{% url 'dashboard' %}"><i class="bi bi-graph-up"></i> Dashboard</a>
+      <a class="{% if '/reports/' in path %}active{% endif %}" href="{% url 'reports' %}"><i class="bi bi-file-earmark-text"></i> Reports</a>
+      {% endif %}
+
+      {% if user.is_platform_admin %}
+      <div class="sidebar-section">Admin</div>
+      <a class="{% if '/users/' in path %}active{% endif %}" href="{% url 'user_list' %}"><i class="bi bi-people"></i> Users</a>
+      <a class="{% if '/settings/' in path %}active{% endif %}" href="{% url 'engine_settings' %}"><i class="bi bi-sliders"></i> Engine Settings</a>
+      {% endif %}
+      {% endwith %}
+    </nav>
+    <div class="sidebar-user">
+      <div class="avatar">{{ user.username|first|upper }}</div>
+      <div class="flex-grow-1 text-truncate">
+        <div class="fw-semibold text-truncate">{{ user }}</div>
+        <div class="small opacity-75 text-truncate">{{ user.get_role_display }}{% if user.company_name %} · {{ user.company_name }}{% endif %}</div>
+      </div>
       <form method="post" action="{% url 'logout' %}">{% csrf_token %}
-        <button class="btn btn-outline-light btn-sm">Log out</button>
+        <button class="btn btn-sm btn-link text-white-50" title="Log out" aria-label="Log out"><i class="bi bi-box-arrow-right fs-5"></i></button>
       </form>
     </div>
-    {% endif %}
+  </aside>
+
+  <div class="app-main">
+    <div class="topbar d-lg-none">
+      <button class="btn btn-outline-secondary btn-sm" data-bs-toggle="offcanvas" data-bs-target="#sidebar" aria-controls="sidebar" aria-label="Open menu"><i class="bi bi-list fs-5"></i></button>
+      <span class="fw-semibold"><i class="bi bi-truck-front-fill text-primary"></i> Smart Dispatch</span>
+    </div>
+    <main class="app-content">
+{% else %}
+<main class="auth-page">
+  <div class="text-center mb-3 fs-4 fw-semibold"><i class="bi bi-truck-front-fill text-primary"></i> Smart Dispatch</div>
+{% endif %}
+      {% for message in messages %}
+      <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
+        {{ message }}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+      </div>
+      {% endfor %}
+      {% block content %}{% endblock %}
+{% if user.is_authenticated %}
+    </main>
   </div>
-</nav>
-<main class="container-fluid py-4 px-3 px-lg-4">
-  {% for message in messages %}
-  <div class="alert alert-{% if message.tags == 'error' %}danger{% else %}{{ message.tags }}{% endif %} alert-dismissible fade show" role="alert">
-    {{ message }}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-  </div>
-  {% endfor %}
-  {% block content %}{% endblock %}
+</div>
+{% else %}
 </main>
+{% endif %}
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
 {% block scripts %}{% endblock %}
 </body>

@@ -6,10 +6,23 @@ from accounts import views as accounts
 from analytics import views as analytics
 from dispatch import views as dispatch
 from engine import views as engine
+from loadboard import views as loadboard
 
 urlpatterns = [
     path("", dispatch.home, name="home"),
     path("board/", dispatch.board, name="board"),
+
+    path("loads/search/", loadboard.load_search, name="load_search"),
+    path("loads/search/<int:pk>/book/", loadboard.book_load, name="book_load"),
+    path("trucks/search/", loadboard.truck_search, name="truck_search"),
+    path("my-loads/", loadboard.my_loads, name="my_loads"),
+    path("my-loads/new/", loadboard.post_load, name="post_load"),
+    path("my-loads/<int:pk>/edit/", loadboard.post_load, name="edit_load_posting"),
+    path("my-loads/<int:pk>/cancel/", loadboard.cancel_load, name="cancel_load_posting"),
+    path("my-trucks/", loadboard.my_trucks, name="my_trucks"),
+    path("my-trucks/new/", loadboard.post_truck, name="post_truck"),
+    path("my-trucks/<int:pk>/edit/", loadboard.post_truck, name="edit_truck_posting"),
+    path("my-trucks/<int:pk>/remove/", loadboard.remove_truck, name="remove_truck_posting"),
 
     path("login/", auth_views.LoginView.as_view(redirect_authenticated_user=True), name="login"),
     path("logout/", auth_views.LogoutView.as_view(), name="logout"),

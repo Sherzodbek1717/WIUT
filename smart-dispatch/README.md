@@ -3,11 +3,14 @@
 Web-based smart dispatch platform for small US carriers (1–5 trucks) and remote
 dispatch teams. BIS Project, WIUT, student 00013457.
 
-It manages loads, drivers, trucks and brokers, helps the dispatcher decide which
-loads to take with a **load decision and profitability engine**, and gives
-managers an **analytics dashboard** of lanes, brokers, empty miles and weekly profit.
+It works like a load board (DAT One, Neblo): dispatchers **search loads** by origin,
+deadhead, destination, equipment and dates, and brokers **search trucks**. Every load
+in the results is scored by the **decision engine** (Accept / Negotiate / Reject using
+real rate per mile including deadhead), so the dispatcher sees at a glance which loads pay.
+A booked load goes into the carrier's TMS (assign driver and truck, status board,
+Telegram bot for drivers), and managers get an **analytics dashboard**.
 
-![Load offer with live decision engine](docs/screenshots/offer.png)
+![Search Loads](docs/screenshots/search-loads.png)
 
 ## How to run it on Windows (step by step)
 
@@ -67,9 +70,16 @@ When you see `Starting development server at http://127.0.0.1:8000/`, open
 
 | Username | Password | What they see |
 |---|---|---|
-| `dispatcher` | `demo12345` | Board, loads, new load offers |
+| `dispatcher` | `demo12345` | Search Loads, Search Trucks, My Truck Posts, the fleet pages |
+| `broker` | `demo12345` | Search Trucks, My Load Posts (post loads) |
 | `manager` | `demo12345` | Dashboard and reports |
 | `admin` | `demo12345` | Everything, plus users and settings |
+
+The demo loads are dated from the day you seed them. On another day, refresh them with:
+
+```bat
+python manage.py seed_marketplace
+```
 
 Keep the Command Prompt window open while you use the app. Closing it (or pressing **Ctrl+C**) stops the server.
 
@@ -95,11 +105,38 @@ Same steps, but use `python3 -m venv .venv` and `source .venv/bin/activate`.
 python manage.py test tests
 ```
 
+## Load board
+
+**Search Loads** (dispatchers)
+
+- Origin and **DH-O** radius, optional destination and **DH-D** radius (“Anywhere” if empty), swap button
+- Equipment, solo/team, full/partial, pickup dates, max weight, minimum $/mile
+- Results like DAT: age, pickup, origin, DH-O, destination, trip miles, equipment, length, weight, rate, $/mile, company, contact
+- **Smart pick** column: the decision engine's Accept / Negotiate / Reject (or *Call* when no rate is posted)
+- **Lane rate**: average posted $/mile for the lane over the last 30 days
+- Sort by age, rate, rate per mile, DH-O, trip length or pickup date
+- Click a row for details, broker contact and the full engine breakdown, then **Book load** with the agreed rate
+- Recent searches on the empty page, like Neblo
+
+**Search Trucks** (brokers and dispatchers): available trucks near a pickup, with the carrier's contact.
+
+**My Truck Posts** (dispatchers) and **My Load Posts** (brokers) put trucks and loads on the marketplace.
+
+![Load details and booking](docs/screenshots/load-details.png)
+
+Distances (DH-O, DH-D, trip miles) are estimated from city coordinates: straight-line miles × 1.17,
+a typical road-to-straight-line ratio. A routing API would give exact road miles. The city list covers
+about 150 US freight markets (`loadboard/geo.py`).
+
+The load board is the platform's own marketplace. Pulling loads from DAT or Truckstop needs
+their paid partner APIs, which the PID puts out of scope.
+
 ## How it maps to the PID
 
 | PID requirement | Where |
 |---|---|
-| Registration, secure login, Dispatcher / Manager / Admin roles | `accounts/` |
+| Registration, secure login, Dispatcher / Broker / Manager / Admin roles | `accounts/` |
+| Load board: search loads and trucks, post loads and trucks, book a load | `loadboard/` |
 | Add, edit, delete, list loads, drivers, trucks (and brokers) | `dispatch/views.py`, `templates/dispatch/` |
 | Assign a load to a driver and a truck | `dispatch/services.py` → `assign_load` |
 | Status board (Available, Dispatched, In transit, Delivered) | `/board/` |
@@ -109,7 +146,7 @@ python manage.py test tests
 | Reports: loads by status, loads per driver, total miles for a selected week | `/reports/` |
 | REST API layer | `POST /api/evaluate/` (used by the live engine panel) |
 | Telegram bot: driver status updates and POD collection | `telegram_bot/` |
-| Black-box testing | `tests/` (41 tests) |
+| Black-box testing | `tests/` (59 tests) |
 | Anonymised test data | `python manage.py seed_demo` |
 
 ## Telegram bot for drivers
@@ -154,10 +191,12 @@ Layered, as in the PID:
 - **Presentation**: Django templates, Bootstrap 5, Chart.js (`templates/`)
 - **Application / API**: Django views and a JSON endpoint (`*/views.py`, `config/urls.py`)
 - **Driver channel**: Telegram bot (`telegram_bot/`), which reuses the same business-logic layer
+- **Load board**: `loadboard/search.py` (radius search, lane rate, engine on each result) and `loadboard/geo.py` (cities and distances)
 - **Business logic**: `engine/core.py` (pure Python, no Django imports, so it is unit-tested on its own) and `dispatch/services.py` (assignment and status rules)
 - **Data**: relational models (`*/models.py`), SQLite in development; switch to PostgreSQL in `config/settings.py`
 
-Entities: User, Broker, Driver, Truck, Load, Assignment, ProofOfDelivery, CompanySettings.
+Entities: User, LoadPosting, TruckPosting, RecentSearch, Broker, Driver, Truck, Load, Assignment,
+ProofOfDelivery, CompanySettings.
 Broker "average rate per mile" and "number of loads" are calculated from loads
 rather than stored, so they can't fall out of date.
 

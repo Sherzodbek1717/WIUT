@@ -21,7 +21,7 @@ class RegisterView(CreateView):
     def form_valid(self, form):
         user = form.save()
         login(self.request, user)
-        messages.success(self.request, "Welcome! Your dispatcher account is ready.")
+        messages.success(self.request, f"Welcome! Your {user.get_role_display().lower()} account is ready.")
         return redirect("home")
 
 

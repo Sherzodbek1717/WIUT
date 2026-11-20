@@ -89,12 +89,27 @@ class PermissionTests(Fixtures):
         self.assertEqual(self.client.get(reverse("dashboard")).status_code, 403)
         self.assertEqual(self.client.get(reverse("user_list")).status_code, 403)
 
-    def test_registration_creates_dispatcher(self):
+    def test_registration_with_chosen_role(self):
+        for username, role in (("newbie", User.Role.DISPATCHER), ("newbroker", User.Role.BROKER)):
+            self.client.post(reverse("register"), {
+                "role": role, "username": username, "email": f"{username}@example.com",
+                "password1": "Str0ng-pass-123", "password2": "Str0ng-pass-123",
+            })
+            self.client.logout()
+            self.assertEqual(User.objects.get(username=username).role, role)
+
+    def test_registration_cannot_pick_admin(self):
         self.client.post(reverse("register"), {
-            "username": "newbie", "email": "n@example.com",
+            "role": User.Role.ADMIN, "username": "sneaky", "email": "s@example.com",
             "password1": "Str0ng-pass-123", "password2": "Str0ng-pass-123",
         })
-        self.assertEqual(User.objects.get(username="newbie").role, User.Role.DISPATCHER)
+        self.assertFalse(User.objects.filter(username="sneaky").exists())
+
+    def test_broker_cannot_open_carrier_pages(self):
+        self.client.force_login(make_user(User.Role.BROKER))
+        for name in ("board", "load_list", "driver_list", "load_search"):
+            self.assertEqual(self.client.get(reverse(name)).status_code, 403, name)
+        self.assertEqual(self.client.get(reverse("load_detail", args=[self.load.pk])).status_code, 403)
 
 
 class PageTests(Fixtures):

@@ -1,0 +1,35 @@
+{% extends "base.html" %}{% load ui humanize %}
+{% block title %}My Load Posts{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3">
+  <h1 class="page-title mb-0">My Load Posts</h1>
+  <a class="btn btn-search" href="{% url 'post_load' %}"><i class="bi bi-plus-lg"></i> Post a load</a>
+</div>
+<div class="results-card shadow-sm"><div class="table-responsive">
+<table class="table results-table">
+  <thead><tr><th>Posted</th><th>Pickup</th><th>Lane</th><th class="text-end">Trip</th><th>EQ</th><th class="text-end">Rate</th><th class="text-end">$/mi</th><th>Status</th><th></th></tr></thead>
+  <tbody>
+  {% for p in postings %}
+  <tr class="no-click">
+    <td class="text-body-secondary">{{ p.posted_at|age }} ago</td>
+    <td>{{ p.pickup_date|date:"M d" }}{% if p.status == "open" and p.pickup_date < today %} <span class="badge text-bg-secondary">expired</span>{% endif %}</td>
+    <td class="fw-semibold">{{ p.origin_label }} → {{ p.destination_label }}</td>
+    <td class="text-end">{{ p.trip_miles|intcomma }}</td>
+    <td>{{ p.get_equipment_display }}</td>
+    <td class="text-end">{% if p.rate %}${{ p.rate|floatformat:0|intcomma }}{% else %}Call{% endif %}</td>
+    <td class="text-end">{% if p.rate_per_mile %}${{ p.rate_per_mile }}{% else %}–{% endif %}</td>
+    <td>
+      {% if p.status == "booked" %}<span class="badge text-bg-success">Booked</span> <span class="small text-body-secondary">by {{ p.booked_by.company_name|default:p.booked_by }}</span>
+      {% elif p.status == "cancelled" %}<span class="badge text-bg-secondary">Removed</span>
+      {% else %}<span class="badge text-bg-primary">Open</span>{% endif %}
+    </td>
+    <td class="text-end">{% if p.status == "open" %}
+      <a class="btn btn-sm btn-outline-primary" href="{% url 'edit_load_posting' p.pk %}">Edit</a>
+      <form method="post" action="{% url 'cancel_load_posting' p.pk %}" class="d-inline">{% csrf_token %}<button class="btn btn-sm btn-outline-danger">Remove</button></form>
+    {% endif %}</td>
+  </tr>
+  {% empty %}<tr class="no-click"><td colspan="9" class="text-center text-body-secondary py-4">You have not posted any loads yet.</td></tr>
+  {% endfor %}
+  </tbody>
+</table></div></div>
+{% endblock %}

@@ -1,10 +1,18 @@
 {% extends "base.html" %}
 {% block title %}Register{% endblock %}
 {% block content %}
-<div class="card shadow-sm auth-card mx-auto mt-4"><div class="card-body p-4">
+<div class="card shadow-sm auth-card mx-auto"><div class="card-body p-4">
   <h1 class="h4 mb-3">Create an account</h1>
   <form method="post" novalidate>{% csrf_token %}
-    {% for field in form %}{% include "_field.html" %}{% endfor %}
+    <div class="mb-3">
+      <div class="form-label">{{ form.role.label }}</div>
+      <div class="btn-group w-100" role="group">
+        {% for radio in form.role %}
+          <input type="radio" class="btn-check" name="{{ radio.data.name }}" id="{{ radio.id_for_label }}" value="{{ radio.data.value }}"{% if radio.data.selected %} checked{% endif %}><label class="btn btn-outline-primary" for="{{ radio.id_for_label }}">{{ radio.choice_label }}</label>
+        {% endfor %}
+      </div>
+    </div>
+    {% for field in form %}{% if field.name != "role" %}{% include "_field.html" %}{% endif %}{% endfor %}
     <button class="btn btn-primary w-100">Register</button>
   </form>
   <p class="mt-3 mb-0 small text-center">Already registered? <a href="{% url 'login' %}">Log in</a></p>

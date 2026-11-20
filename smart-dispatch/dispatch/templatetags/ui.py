@@ -1,5 +1,6 @@
 from django import template
 from django.forms import CheckboxInput, Select
+from django.utils import timezone
 
 register = template.Library()
 
@@ -45,3 +46,22 @@ def recommendation_colour(value):
 @register.filter
 def hos_colour(value):
     return HOS_COLOURS.get(value, "secondary")
+
+
+@register.filter
+def age(posted_at):
+    """Compact posting age like DAT: 5m, 3h, 2d."""
+    seconds = max(0, int((timezone.now() - posted_at).total_seconds()))
+    if seconds < 3600:
+        return f"{max(1, seconds // 60)}m"
+    if seconds < 86400:
+        return f"{seconds // 3600}h"
+    return f"{seconds // 86400}d"
+
+
+@register.simple_tag
+def sort_url(request, value):
+    """Current search URL with a different sort order."""
+    params = request.GET.copy()
+    params["sort"] = value
+    return f"?{params.urlencode()}"
