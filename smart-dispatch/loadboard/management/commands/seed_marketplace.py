@@ -14,7 +14,7 @@ from django.utils import timezone
 
 from accounts.models import User
 from loadboard import geo
-from loadboard.models import Equipment, LoadPosting, LoadType, TruckPosting
+from loadboard.models import Equipment, LoadPosting, LoadType, TruckPosting, broker_for
 
 DEMO_PASSWORD = "demo12345"
 
@@ -48,6 +48,13 @@ BROKERS = [
     ("Summit Supply Chain Demo", "(555) 010-2005"), ("Lone Oak Logistics Demo", "(555) 010-2006"),
     ("Prairie Freight Demo", "(555) 010-2007"), ("Harbor Point Shipping Demo", "(555) 010-2008"),
 ]
+# More broker companies for the directory; their loads are posted by a system user.
+MORE_BROKERS = [
+    "Cedar Lane Freight Demo", "Atlas Crossing Logistics Demo", "Golden Gate Brokerage Demo", "Iron Horse Freight Demo",
+    "Magnolia Shipping Demo", "Twin Rivers Logistics Demo", "Keystone Cargo Demo", "Sunbelt Freight Demo",
+    "Midwest Link Demo", "Coastal Haul Brokerage Demo", "Silver State Logistics Demo", "Pinecrest Freight Demo",
+    "Gulf Breeze Logistics Demo", "Rocky Ridge Brokerage Demo", "Liberty Lane Freight Demo", "Canyon Express Demo",
+]
 CARRIERS = [
     "Max Trans Demo LLC", "Eagle Road Demo Inc", "Silk Way Demo Trucking", "Mosier Demo Transport",
     "Blue Ridge Demo Carriers", "Desert Wind Demo Freight", "Great Lakes Demo Hauling", "Pioneer Demo Lines",
@@ -80,7 +87,31 @@ class Command(BaseCommand):
             if created:
                 user.set_password(DEMO_PASSWORD)
                 user.save()
-            brokers.append(user)
+            brokers.append({"user": user, "company": company, "phone": phone, "email": user.email})
+
+        system_broker, created = User.objects.get_or_create(
+            username="demo_brokers",
+            defaults={"email": "brokers@example.com", "role": User.Role.BROKER, "company_name": "Demo brokers"},
+        )
+        if created:
+            system_broker.set_unusable_password()
+            system_broker.save()
+        for i, company in enumerate(MORE_BROKERS):
+            slug = company.lower().replace(" demo", "").replace(" ", "")
+            brokers.append({"user": system_broker, "company": company, "phone": f"(555) 010-{3001 + i}",
+                            "email": f"loads@{slug}.example.com"})
+
+        # Directory details (HQ city, MC number, website) for every broker company.
+        for i, b in enumerate(brokers):
+            city, state, _, _ = geo.find_city(rng.choice(list(HUBS)))
+            directory = broker_for(b["company"], b["phone"], b["email"])
+            if not directory.mc_number:
+                directory.mc_number = str(rng.randint(100000, 1299999))
+                directory.city, directory.state = city, state
+                slug = b["company"].lower().replace(" demo", "").replace(" ", "")
+                directory.website = f"https://{slug}.example.com"
+                directory.save()
+            b["broker"] = directory
         # Owner of the invented carriers' truck posts; it cannot log in.
         carrier_user, created = User.objects.get_or_create(
             username="demo_carriers",
@@ -90,7 +121,7 @@ class Command(BaseCommand):
             carrier_user.set_unusable_password()
             carrier_user.save()
 
-        LoadPosting.objects.filter(status=LoadPosting.Status.OPEN).delete()
+        LoadPosting.objects.filter(status=LoadPosting.Status.OPEN).delete()  # booked ones stay as history
         TruckPosting.objects.filter(posted_by=carrier_user).delete()
 
         hubs = [(label, weight) for label, weight in HUBS.items()]
@@ -112,10 +143,13 @@ class Command(BaseCommand):
             rate = None if rng.random() < 0.2 else Decimal(round(rpm * trip / 25) * 25)
             pickup = today + timedelta(days=rng.choice([0, 0, 1, 1, 1, 2, 2, 3]))
             broker = rng.choice(brokers)
+            # Fewer loads from the extra directory brokers than from the main demo accounts.
+            if broker["user"] == system_broker and rng.random() < 0.5:
+                broker = rng.choice(brokers[:len(BROKERS)])
             partial = rng.random() < 0.15
             postings.append(LoadPosting(
-                posted_by=broker, company_name=broker.company_name, contact_phone=broker.phone,
-                contact_email=broker.email if rng.random() < 0.4 else "",
+                posted_by=broker["user"], broker=broker["broker"], company_name=broker["company"],
+                contact_phone=broker["phone"], contact_email=broker["email"] if rng.random() < 0.6 else "",
                 reference=f"{rng.randint(1000000, 9999999)}",
                 origin_city=o[0], origin_state=o[1], origin_lat=o[2], origin_lon=o[3],
                 destination_city=d[0], destination_state=d[1], destination_lat=d[2], destination_lon=d[3],

@@ -1,0 +1,59 @@
+{% extends "base.html" %}{% load humanize ui %}
+{% block title %}Call Assistant{% endblock %}
+{% block content %}
+<h1 class="page-title"><i class="bi bi-headset"></i> Call Assistant</h1>
+{% include "copilot/_load_summary.html" %}
+<div class="row g-3">
+  <div class="col-lg-7">
+    <div class="card shadow-sm"><div class="card-body">
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h2 class="h5 mb-0">Your call script {% if script.ai_used %}<span class="badge text-bg-primary"><i class="bi bi-stars"></i> AI</span>{% endif %}</h2>
+        <form method="post">{% csrf_token %}<input type="hidden" name="dh_o" value="{{ dh_o|default_if_none:'' }}">
+          <button name="action" value="ai" class="btn btn-sm btn-outline-primary"><i class="bi bi-magic"></i> {% if script.ai_used %}Regenerate{% else %}Write with AI{% endif %}</button>
+        </form>
+      </div>
+      <p class="script-line"><span class="badge text-bg-secondary me-1">1</span> <b>Open:</b> “{{ script.opening }}”</p>
+      <div class="mb-2"><span class="badge text-bg-secondary me-1">2</span> <b>Confirm the load:</b></div>
+      <ul class="checklist">{% for q in script.questions %}<li><label><input type="checkbox" class="form-check-input me-2">{{ q }}</label></li>{% endfor %}</ul>
+      <div class="mb-2"><span class="badge text-bg-secondary me-1">3</span> <b>Negotiate:</b></div>
+      <ul>{% for n in script.negotiation %}<li>{{ n }}</li>{% endfor %}</ul>
+      <p class="mb-0"><span class="badge text-bg-secondary me-1">4</span> <b>Close:</b> “{{ script.closing }}”</p>
+      {% if not ai_available %}<div class="small text-body-secondary mt-2">AI not connected – this is the standard script. See the README to connect Claude.</div>{% endif %}
+    </div></div>
+  </div>
+  <div class="col-lg-5">
+    {% if posting.contact_phone %}
+    <a class="btn btn-success btn-lg w-100 mb-3" href="tel:{{ posting.contact_phone }}"><i class="bi bi-telephone-fill"></i> Call {{ posting.contact_phone }}</a>
+    {% else %}
+    <div class="alert alert-warning">No phone posted. <a href="{% url 'compose_email' posting.pk %}?dh_o={{ dh_o|default:0 }}">Email the broker instead.</a></div>
+    {% endif %}
+    <div class="card shadow-sm mb-3"><div class="card-body">
+      <h2 class="h6">After the call, log the result</h2>
+      <form method="post" novalidate>{% csrf_token %}
+        <input type="hidden" name="dh_o" value="{{ dh_o|default_if_none:'' }}">
+        {% for field in form %}{% include "_field.html" %}{% endfor %}
+        <button name="action" value="log" class="btn btn-search w-100">Save call</button>
+      </form>
+    </div></div>
+    {% if posting.status == "open" and user.can_edit_operations %}
+    <div class="card shadow-sm border-success mb-3"><div class="card-body">
+      <h2 class="h6">Got the load?</h2>
+      <form method="post" action="{% url 'book_load' posting.pk %}">{% csrf_token %}
+        <input type="hidden" name="dh_o" value="{{ dh_o|default:0 }}">
+        <div class="input-group">
+          <span class="input-group-text">$</span>
+          <input type="number" step="0.01" min="1" name="rate" class="form-control" required value="{{ book_rate|default_if_none:''|floatformat:0 }}" aria-label="Agreed rate">
+          <button class="btn btn-success"><i class="bi bi-check2-circle"></i> Book load</button>
+        </div>
+      </form>
+    </div></div>
+    {% elif posting.status != "open" %}<div class="alert alert-secondary">This load is {{ posting.get_status_display|lower }}.</div>{% endif %}
+    {% if calls %}
+    <div class="card shadow-sm"><div class="card-body small">
+      <h2 class="h6">Your calls on this load</h2>
+      {% for c in calls %}<div class="border-bottom py-1">{{ c.called_at|date:"M d H:i" }} · <b>{{ c.get_outcome_display }}</b>{% if c.rate_quoted %} · ${{ c.rate_quoted|floatformat:0|intcomma }}{% endif %}{% if c.notes %}<br><span class="text-body-secondary">{{ c.notes }}</span>{% endif %}</div>{% endfor %}
+    </div></div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

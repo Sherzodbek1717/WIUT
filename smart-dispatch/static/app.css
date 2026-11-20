@@ -63,3 +63,9 @@ body { background: var(--app-bg); font-size: .925rem; }
 .stat-value { font-size: 1.6rem; font-weight: 600; }
 .result-panel .metric { font-size: 1.15rem; font-weight: 600; }
 .results-table tbody tr.no-click { cursor: default; }
+.ai-box { background: linear-gradient(135deg, #eef2ff, #f5f3ff); border: 1px solid #c7d2fe; }
+.checklist { list-style: none; padding-left: .25rem; }
+.checklist li { padding: .2rem 0; }
+.broker-card:hover { border-color: var(--sidebar-active); }
+.select-bar { position: sticky; bottom: 1rem; z-index: 5; }
+.results-table td.pick, .results-table th.pick { width: 2rem; }

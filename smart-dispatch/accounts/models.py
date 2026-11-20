@@ -15,6 +15,7 @@ class User(AbstractUser):
     role = models.CharField(max_length=20, choices=Role.choices, default=Role.DISPATCHER)
     company_name = models.CharField(max_length=120, blank=True)
     phone = models.CharField(max_length=30, blank=True)
+    mc_number = models.CharField("MC number", max_length=20, blank=True)
 
     @property
     def is_dispatcher(self):

@@ -1,0 +1,56 @@
+{% extends "base.html" %}{% load humanize %}
+{% block title %}{{ broker.name }}{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-start flex-wrap gap-2 mb-3">
+  <div>
+    <a class="small" href="{% url 'broker_list' %}"><i class="bi bi-arrow-left"></i> Broker directory</a>
+    <h1 class="page-title mb-0">{{ broker.name }}</h1>
+    <div class="text-body-secondary">{% if broker.mc_number %}MC {{ broker.mc_number }}{% endif %}{% if broker.city %} · {{ broker.city }}, {{ broker.state }}{% endif %}{% if broker.website %} · <a href="{{ broker.website }}" target="_blank" rel="noopener">website</a>{% endif %}</div>
+  </div>
+  <div class="d-flex gap-2">
+    {% if broker.contact_phone %}<a class="btn btn-success" href="tel:{{ broker.contact_phone }}"><i class="bi bi-telephone-fill"></i> {{ broker.contact_phone }}</a>{% endif %}
+    {% if broker.contact_email %}<a class="btn btn-outline-primary" href="mailto:{{ broker.contact_email }}"><i class="bi bi-envelope"></i> Email</a>{% endif %}
+    {% if user.can_edit_operations %}<a class="btn btn-light border" href="{% url 'broker_edit' broker.pk %}">Edit</a>{% endif %}
+  </div>
+</div>
+<div class="row g-3 mb-3">
+  <div class="col-6 col-lg-3"><div class="card shadow-sm"><div class="card-body"><div class="small text-body-secondary">Loads posted</div><div class="stat-value">{{ broker.posted }}</div></div></div></div>
+  <div class="col-6 col-lg-3"><div class="card shadow-sm"><div class="card-body"><div class="small text-body-secondary">Open now</div><div class="stat-value">{{ broker.open_loads }}</div></div></div></div>
+  <div class="col-6 col-lg-3"><div class="card shadow-sm"><div class="card-body"><div class="small text-body-secondary">Avg posted $/mi</div><div class="stat-value">{% if broker.avg_rpm %}${{ broker.avg_rpm|floatformat:2 }}{% else %}—{% endif %}</div></div></div></div>
+  <div class="col-6 col-lg-3"><div class="card shadow-sm"><div class="card-body"><div class="small text-body-secondary">Booked with you</div><div class="stat-value">{{ booked|length }}</div></div></div></div>
+</div>
+{% if broker.notes %}<div class="alert alert-light border"><i class="bi bi-sticky"></i> {{ broker.notes|linebreaksbr }}</div>{% endif %}
+<div class="row g-3">
+  <div class="col-lg-7">
+    <div class="results-card shadow-sm mb-3"><div class="p-3 pb-0"><h2 class="h6">Open loads</h2></div><div class="table-responsive">
+      <table class="table results-table">
+        <thead><tr><th>Pickup</th><th>Lane</th><th>EQ</th><th class="text-end">Rate</th><th></th></tr></thead>
+        <tbody>
+        {% for p in open_postings %}
+        <tr class="no-click">
+          <td>{{ p.pickup_date|date:"m/d" }}</td><td class="fw-semibold">{{ p.origin_label }} → {{ p.destination_label }}</td><td>{{ p.equipment }}</td>
+          <td class="text-end">{% if p.rate %}${{ p.rate|floatformat:0|intcomma }}{% else %}–{% endif %}</td>
+          <td class="text-end">{% if user.can_edit_operations %}<a class="btn btn-sm btn-outline-primary" href="{% url 'compose_email' p.pk %}" title="Email" aria-label="Email broker about this load"><i class="bi bi-envelope"></i></a> <a class="btn btn-sm btn-outline-success" href="{% url 'call_assistant' p.pk %}" title="Call Assistant" aria-label="Call Assistant for this load"><i class="bi bi-headset"></i></a>{% endif %}</td>
+        </tr>
+        {% empty %}<tr class="no-click"><td colspan="5" class="text-body-secondary">No open loads right now.</td></tr>{% endfor %}
+        </tbody>
+      </table></div></div>
+  </div>
+  <div class="col-lg-5">
+    <div class="card shadow-sm mb-3"><div class="card-body">
+      <h2 class="h6">Lanes they post most</h2>
+      <table class="table table-sm mb-0 small"><tbody>
+      {% for l in lanes %}<tr><td>{{ l.origin_state }} → {{ l.destination_state }}</td><td class="text-end">{{ l.n }} load{{ l.n|pluralize }}</td><td class="text-end">{% if l.avg %}${{ l.avg|floatformat:2 }}/mi{% else %}–{% endif %}</td></tr>
+      {% empty %}<tr><td class="text-body-secondary">No postings yet.</td></tr>{% endfor %}
+      </tbody></table>
+    </div></div>
+    <div class="card shadow-sm"><div class="card-body small">
+      <h2 class="h6">Your history with them</h2>
+      {% for c in calls %}<div><i class="bi bi-telephone"></i> {{ c.called_at|date:"M d" }} · {{ c.get_outcome_display }}{% if c.rate_quoted %} · ${{ c.rate_quoted|floatformat:0 }}{% endif %}</div>{% endfor %}
+      {% for e in emails %}<div><i class="bi bi-envelope"></i> {{ e.sent_at|date:"M d" }} · {{ e.subject|truncatechars:50 }}</div>{% endfor %}
+      {% for l in booked %}<div><i class="bi bi-truck"></i> <a href="{{ l.get_absolute_url }}">{{ l.pickup_at|date:"M d" }} · {{ l.lane }} · ${{ l.rate|floatformat:0 }}</a></div>{% endfor %}
+      {% if not calls and not emails and not booked %}<span class="text-body-secondary">Nothing yet.</span>{% endif %}
+    </div></div>
+  </div>
+</div>
+{% endblock %}

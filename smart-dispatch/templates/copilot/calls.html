@@ -1,0 +1,23 @@
+{% extends "base.html" %}{% load humanize %}
+{% block title %}Call log{% endblock %}
+{% block content %}
+<h1 class="page-title"><i class="bi bi-telephone"></i> Call log</h1>
+<div class="results-card shadow-sm"><div class="table-responsive">
+<table class="table results-table">
+  <thead><tr><th>When</th><th>Broker</th><th>Load</th><th>Outcome</th><th class="text-end">Rate quoted</th><th>Notes</th></tr></thead>
+  <tbody>
+  {% for c in page %}
+  <tr class="no-click">
+    <td class="text-body-secondary">{{ c.called_at|date:"M d, H:i" }}</td>
+    <td>{% if c.broker %}<a href="{% url 'broker_detail' c.broker.pk %}">{{ c.broker }}</a>{% else %}{{ c.phone }}{% endif %}</td>
+    <td>{% if c.posting %}<a href="{% url 'call_assistant' c.posting.pk %}">{{ c.posting.origin_label }} → {{ c.posting.destination_label }}</a>{% else %}—{% endif %}</td>
+    <td><span class="badge {% if c.outcome == 'booked' %}text-bg-success{% elif c.outcome == 'quoted' or c.outcome == 'negotiating' %}text-bg-primary{% else %}text-bg-secondary{% endif %}">{{ c.get_outcome_display }}</span></td>
+    <td class="text-end">{% if c.rate_quoted %}${{ c.rate_quoted|floatformat:0|intcomma }}{% else %}—{% endif %}</td>
+    <td class="small" style="white-space: normal">{{ c.notes|truncatechars:80 }}</td>
+  </tr>
+  {% empty %}<tr class="no-click"><td colspan="6" class="text-center text-body-secondary py-4">No calls logged yet. Open a load and press <b>Call Assistant</b>.</td></tr>
+  {% endfor %}
+  </tbody>
+</table></div></div>
+{% include "copilot/_pager.html" %}
+{% endblock %}

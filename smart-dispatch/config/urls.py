@@ -6,6 +6,7 @@ from accounts import views as accounts
 from analytics import views as analytics
 from dispatch import views as dispatch
 from engine import views as engine
+from copilot import views as copilot
 from loadboard import views as loadboard
 
 urlpatterns = [
@@ -50,10 +51,18 @@ urlpatterns = [
     path("trucks/<int:pk>/edit/", dispatch.TruckUpdateView.as_view(), name="truck_edit"),
     path("trucks/<int:pk>/delete/", dispatch.TruckDeleteView.as_view(), name="truck_delete"),
 
-    path("brokers/", dispatch.BrokerListView.as_view(), name="broker_list"),
+    path("brokers/", copilot.broker_directory, name="broker_list"),
+    path("brokers/<int:pk>/", copilot.broker_detail, name="broker_detail"),
     path("brokers/new/", dispatch.BrokerCreateView.as_view(), name="broker_create"),
     path("brokers/<int:pk>/edit/", dispatch.BrokerUpdateView.as_view(), name="broker_edit"),
     path("brokers/<int:pk>/delete/", dispatch.BrokerDeleteView.as_view(), name="broker_delete"),
+
+    path("copilot/email/<int:pk>/", copilot.compose_email, name="compose_email"),
+    path("copilot/email/bulk/", copilot.bulk_email, name="bulk_email"),
+    path("copilot/mailbox/", copilot.mailbox, name="mailbox"),
+    path("copilot/call/<int:pk>/", copilot.call_assistant, name="call_assistant"),
+    path("copilot/calls/", copilot.call_log, name="call_log"),
+    path("profile/", copilot.profile, name="profile"),
 
     path("dashboard/", analytics.DashboardView.as_view(), name="dashboard"),
     path("reports/", analytics.ReportsView.as_view(), name="reports"),

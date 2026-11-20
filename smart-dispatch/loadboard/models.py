@@ -44,6 +44,20 @@ class Place(models.Model):
         return timezone.now() - self.posted_at
 
 
+def broker_for(company_name, phone="", email=""):
+    """The directory entry for a broker company, created the first time it posts a load."""
+    from dispatch.models import Broker
+
+    broker, created = Broker.objects.get_or_create(
+        name=company_name, defaults={"contact_phone": phone, "contact_email": email}
+    )
+    if not created and (not broker.contact_phone and phone or not broker.contact_email and email):
+        broker.contact_phone = broker.contact_phone or phone
+        broker.contact_email = broker.contact_email or email
+        broker.save(update_fields=["contact_phone", "contact_email"])
+    return broker
+
+
 class LoadPosting(Place):
     """A load a broker offers on the marketplace. Dispatchers search and book these."""
 
@@ -53,6 +67,9 @@ class LoadPosting(Place):
         CANCELLED = "cancelled", "Cancelled"
 
     posted_by = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="load_postings")
+    broker = models.ForeignKey(
+        "dispatch.Broker", on_delete=models.SET_NULL, null=True, blank=True, related_name="postings"
+    )
     company_name = models.CharField(max_length=120)
     contact_phone = models.CharField(max_length=30, blank=True)
     contact_email = models.EmailField(blank=True)
@@ -106,6 +123,8 @@ class LoadPosting(Place):
 
     def save(self, *args, **kwargs):
         self.trip_miles = max(1, geo.road_miles(self.origin_lat, self.origin_lon, self.destination_lat, self.destination_lon))
+        if self.broker_id is None and self.company_name:
+            self.broker = broker_for(self.company_name, self.contact_phone, self.contact_email)
         super().save(*args, **kwargs)
 
     def pickup_datetime(self):

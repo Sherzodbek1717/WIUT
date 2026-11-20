@@ -8,7 +8,7 @@ DATETIME_WIDGET = forms.DateTimeInput(attrs={"type": "datetime-local"}, format="
 class BrokerForm(forms.ModelForm):
     class Meta:
         model = Broker
-        fields = ("name", "mc_number", "contact_email", "contact_phone")
+        fields = ("name", "mc_number", "contact_email", "contact_phone", "website", "city", "state", "notes")
 
 
 class DriverForm(forms.ModelForm):

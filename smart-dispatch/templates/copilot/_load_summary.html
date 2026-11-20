@@ -1,0 +1,17 @@
+{% load humanize %}<div class="card shadow-sm mb-3"><div class="card-body">
+  <div class="d-flex justify-content-between flex-wrap gap-2">
+    <div>
+      <div class="fw-bold fs-5">{{ posting.origin_label }} <i class="bi bi-arrow-right text-primary"></i> {{ posting.destination_label }}</div>
+      <div class="small text-body-secondary">{{ posting.pickup_date|date:"D, M d" }} · {{ posting.get_equipment_display }}{% if posting.team_required %}, team{% endif %} · {{ posting.weight_lbs|intcomma }} lbs · {{ posting.trip_miles|intcomma }} mi{% if dh_o is not None %} + {{ dh_o }} mi deadhead{% endif %}{% if posting.reference %} · Ref {{ posting.reference }}{% endif %}</div>
+    </div>
+    <div class="text-end">
+      <a class="fw-semibold" href="{% if posting.broker %}{% url 'broker_detail' posting.broker.pk %}{% else %}#{% endif %}">{{ posting.company_name }}</a>
+      <div class="small">{% if posting.contact_phone %}<i class="bi bi-telephone"></i> {{ posting.contact_phone }}{% endif %} {% if posting.contact_email %}<i class="bi bi-envelope ms-1"></i> {{ posting.contact_email }}{% endif %}</div>
+    </div>
+  </div>
+  <div class="d-flex gap-2 mt-2 flex-wrap">
+    <span class="badge text-bg-light border">Posted {% if posting.rate %}${{ posting.rate|floatformat:0|intcomma }}{% else %}– (call){% endif %}</span>
+    <span class="badge text-bg-success">Your target ${{ target|floatformat:0|intcomma }}</span>
+    {% if walk_away %}<span class="badge text-bg-danger">Walk away below ${{ walk_away|floatformat:0|intcomma }}</span>{% endif %}
+  </div>
+</div></div>

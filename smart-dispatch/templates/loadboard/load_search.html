@@ -49,9 +49,11 @@
   </div>
 
   {% if results %}
+  <form method="post" action="{% url 'bulk_email' %}" id="bulk-form">{% csrf_token %}
   <div class="results-card shadow-sm"><div class="table-responsive">
   <table class="table results-table">
     <thead><tr>
+      {% if can_book %}<th class="pick"><input type="checkbox" class="form-check-input" id="pick-all" aria-label="Select all loads"></th>{% endif %}
       <th>Age</th><th>Pickup</th><th>Origin</th><th class="text-end">DH-O</th><th></th><th>Destination</th>
       {% if form.cleaned_data.destination %}<th class="text-end">DH-D</th>{% endif %}
       <th class="text-end">Trip</th><th>EQ</th><th class="text-end">Length</th><th class="text-end">Weight</th><th>Cap</th>
@@ -59,7 +61,8 @@
     </tr></thead>
     <tbody>
     {% for r in results %}{% with p=r.posting %}
-    <tr data-bs-toggle="offcanvas" data-bs-target="#load-{{ p.pk }}" tabindex="0" aria-label="Open load {{ p.origin_label }} to {{ p.destination_label }}">
+    <tr data-details="#load-{{ p.pk }}" tabindex="0" aria-label="Open load {{ p.origin_label }} to {{ p.destination_label }}">
+      {% if can_book %}<td class="pick"><input type="checkbox" class="form-check-input pick" name="pick" value="{{ p.pk }}:{{ r.dh_o }}" aria-label="Select this load"></td>{% endif %}
       <td class="text-body-secondary">{{ p.posted_at|age }}</td>
       <td>{{ p.pickup_date|date:"m/d" }}</td>
       <td class="fw-semibold">{{ p.origin_label }}</td>
@@ -82,6 +85,15 @@
     </tbody>
   </table>
   </div></div>
+  {% if can_book %}
+  <div class="select-bar d-none" id="select-bar">
+    <div class="d-flex align-items-center gap-3 bg-dark text-white rounded-3 shadow px-3 py-2 mx-auto" style="max-width: 520px">
+      <span><b id="pick-count">0</b> selected</span>
+      <button class="btn btn-sm btn-light ms-auto"><i class="bi bi-envelope-paper"></i> Email selected brokers</button>
+    </div>
+  </div>
+  {% endif %}
+  </form>
   {% if total > results|length %}<p class="small text-body-secondary mt-2">Showing the first {{ results|length }}. Narrow the search to see more.</p>{% endif %}
 
   {% for r in results %}{% with p=r.posting %}
@@ -116,6 +128,10 @@
       {% else %}<div class="alert alert-light border small">No rate posted. Call the broker; once you have a rate, type it below and the engine will check it on the load page.</div>{% endif %}
 
       {% if can_book %}
+      <div class="d-flex gap-2 mt-3">
+        <a class="btn btn-outline-primary flex-fill" href="{% url 'compose_email' p.pk %}?dh_o={{ r.dh_o }}"><i class="bi bi-envelope-paper"></i> Email broker</a>
+        <a class="btn btn-outline-success flex-fill" href="{% url 'call_assistant' p.pk %}?dh_o={{ r.dh_o }}"><i class="bi bi-headset"></i> Call Assistant</a>
+      </div>
       <form method="post" action="{% url 'book_load' p.pk %}" class="mt-3 border-top pt-3">{% csrf_token %}
         <input type="hidden" name="dh_o" value="{{ r.dh_o }}">
         <label class="form-label fw-semibold" for="rate-{{ p.pk }}">Agreed rate ($)</label>
@@ -140,8 +156,23 @@
     const o = document.getElementById("id_origin"), d = document.getElementById("id_destination");
     [o.value, d.value] = [d.value, o.value];
   });
-  // Open a row's details with the keyboard too.
-  document.querySelectorAll(".results-table tbody tr").forEach((row) =>
-    row.addEventListener("keydown", (e) => { if (e.key === "Enter") row.click(); }));
+  // Bulk email: show the bar when loads are ticked.
+  const picks = [...document.querySelectorAll("input.pick")];
+  const bar = document.getElementById("select-bar");
+  function updateBar() {
+    const n = picks.filter((p) => p.checked).length;
+    if (!bar) return;
+    bar.classList.toggle("d-none", n === 0);
+    document.getElementById("pick-count").textContent = n;
+  }
+  picks.forEach((p) => p.addEventListener("change", updateBar));
+  const all = document.getElementById("pick-all");
+  if (all) all.addEventListener("change", () => { picks.slice(0, 25).forEach((p) => p.checked = all.checked); updateBar(); });
+  // Open a row's details on click or Enter, except when ticking its checkbox.
+  document.querySelectorAll(".results-table tbody tr[data-details]").forEach((row) => {
+    const open = () => bootstrap.Offcanvas.getOrCreateInstance(document.querySelector(row.dataset.details)).show();
+    row.addEventListener("click", (e) => { if (!e.target.closest(".pick")) open(); });
+    row.addEventListener("keydown", (e) => { if (e.key === "Enter" && !e.target.closest(".pick")) open(); });
+  });
 </script>
 {% endblock %}

@@ -1,9 +1,7 @@
-from decimal import Decimal
-
 from django.conf import settings
 from django.contrib import messages
 from django.contrib.auth.decorators import login_required
-from django.db.models import Count, F, ProtectedError, Q, Sum
+from django.db.models import Count, ProtectedError, Q
 from django.http import FileResponse, Http404, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse_lazy
@@ -70,25 +68,6 @@ class RecordDeleteView(OperationsEditMixin, DeleteView):
             return redirect(self.success_url)
         messages.success(self.request, f"{self.model._meta.verbose_name.capitalize()} deleted.")
         return response
-
-
-class BrokerListView(TmsMixin, ListView):
-    template_name = "dispatch/broker_list.html"
-
-    def get_queryset(self):
-        return Broker.objects.annotate(
-            load_count=Count("loads"),
-            revenue=Sum("loads__rate"),
-            miles=Sum(F("loads__loaded_miles") + F("loads__deadhead_miles")),
-        )
-
-    def get_context_data(self, **kwargs):
-        context = super().get_context_data(**kwargs)
-        for broker in context["object_list"]:
-            broker.avg_rate_per_mile = (
-                (broker.revenue / broker.miles).quantize(Decimal("0.01")) if broker.miles else None
-            )
-        return context
 
 
 class BrokerCreateView(RecordFormMixin, CreateView):

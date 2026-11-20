@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+{% block title %}Broker directory{% endblock %}
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+  <h1 class="page-title mb-0"><i class="bi bi-building"></i> Broker directory</h1>
+  {% if user.can_edit_operations %}<a class="btn btn-search btn-sm" href="{% url 'broker_create' %}"><i class="bi bi-plus-lg"></i> Add broker</a>{% endif %}
+</div>
+<form method="get" class="search-panel mb-3 row g-2 align-items-end mx-0">
+  <div class="col-12 col-md-4"><label class="form-label" for="q">Name, MC or city</label><input class="form-control" id="q" name="q" value="{{ query }}" placeholder="Search brokers"></div>
+  <div class="col-6 col-md-2"><label class="form-label" for="state">State</label>
+    <select class="form-select" id="state" name="state"><option value="">All states</option>{% for code, label in states %}<option value="{{ code }}" {% if code == state %}selected{% endif %}>{{ label }}</option>{% endfor %}</select></div>
+  <div class="col-6 col-md-2"><label class="form-label" for="sort">Sort</label>
+    <select class="form-select" id="sort" name="sort">
+      <option value="posted" {% if sort == "posted" %}selected{% endif %}>Most loads</option>
+      <option value="rate" {% if sort == "rate" %}selected{% endif %}>Best $/mile</option>
+      <option value="recent" {% if sort == "recent" %}selected{% endif %}>Recently active</option>
+      <option value="name" {% if sort == "name" %}selected{% endif %}>Name</option>
+    </select></div>
+  <div class="col-6 col-md-2"><div class="form-check mb-2"><input class="form-check-input" type="checkbox" id="open" name="open" value="1" {% if open %}checked{% endif %}><label class="form-check-label" for="open">Has open loads</label></div></div>
+  <div class="col-6 col-md-2"><button class="btn btn-search w-100"><i class="bi bi-search"></i> Find</button></div>
+</form>
+<div class="small text-body-secondary mb-2">{{ total }} broker{{ total|pluralize }}</div>
+<div class="row g-3">
+  {% for b in page %}
+  <div class="col-md-6 col-xl-4">
+    <a class="card shadow-sm h-100 text-decoration-none broker-card" href="{% url 'broker_detail' b.pk %}">
+      <div class="card-body">
+        <div class="d-flex justify-content-between">
+          <div class="fw-bold text-body text-truncate">{{ b.name }}</div>
+          {% if b.open_loads %}<span class="badge text-bg-success">{{ b.open_loads }} open</span>{% endif %}
+        </div>
+        <div class="small text-body-secondary">{% if b.mc_number %}MC {{ b.mc_number }}{% endif %}{% if b.city %} · {{ b.city }}, {{ b.state }}{% endif %}</div>
+        <div class="d-flex gap-3 mt-2 small text-body">
+          <span><b>{{ b.posted }}</b> loads posted</span>
+          <span>{% if b.avg_rpm %}<b>${{ b.avg_rpm|floatformat:2 }}</b>/mi avg{% else %}no rates yet{% endif %}</span>
+        </div>
+        <div class="small mt-2 text-primary text-truncate">{% if b.contact_phone %}<i class="bi bi-telephone"></i> {{ b.contact_phone }}{% endif %} {% if b.contact_email %}<i class="bi bi-envelope ms-1"></i> {{ b.contact_email }}{% endif %}</div>
+      </div>
+    </a>
+  </div>
+  {% empty %}<div class="empty-state"><i class="bi bi-building"></i><div class="mt-2">No brokers match.</div></div>
+  {% endfor %}
+</div>
+{% include "copilot/_pager.html" %}
+{% endblock %}

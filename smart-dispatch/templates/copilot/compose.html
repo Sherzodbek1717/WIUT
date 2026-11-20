@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block title %}Email broker{% endblock %}
+{% block content %}
+<div class="row justify-content-center"><div class="col-xl-8">
+  <h1 class="page-title"><i class="bi bi-envelope-paper"></i> Email broker</h1>
+  {% include "copilot/_load_summary.html" %}
+  <form method="post" class="card shadow-sm" novalidate>{% csrf_token %}<div class="card-body">
+    <input type="hidden" name="dh_o" value="{{ dh_o|default_if_none:'' }}">
+    {# Pressing Enter sends, rather than triggering the first (AI) button. #}
+    <button type="submit" name="action" value="send" hidden tabindex="-1" aria-hidden="true"></button>
+    <input type="hidden" name="ai_written" value="{% if ai_written %}1{% else %}0{% endif %}">
+    {% if profile_incomplete %}<div class="alert alert-light border py-2 small"><i class="bi bi-person-vcard"></i> Add your company name and MC number in <a href="{% url 'profile' %}">My profile</a> so brokers can set you up.</div>{% endif %}
+    {% if not posting.contact_email %}<div class="alert alert-warning py-2 small">This broker posted no email. Type one in, or use the <a href="{% url 'call_assistant' posting.pk %}?dh_o={{ dh_o|default:0 }}">Call Assistant</a>.</div>{% endif %}
+    {% for field in form %}{% if field.name != "note" %}{% include "_field.html" %}{% endif %}{% endfor %}
+    <div class="ai-box p-3 rounded mb-3">
+      <div class="fw-semibold mb-2"><i class="bi bi-stars"></i> Let {{ APP_NAME }} write it</div>
+      {% with field=form.note %}{% include "_field.html" %}{% endwith %}
+      <button name="action" value="ai" class="btn btn-outline-primary btn-sm"><i class="bi bi-magic"></i> {% if ai_written %}Rewrite{% else %}Write with AI{% endif %}</button>
+      {% if not ai_available %}<span class="small text-body-secondary ms-2">AI not connected – the standard template is used (see README).</span>{% endif %}
+      {% if ai_written %}<span class="badge text-bg-primary ms-2">Written by AI – check before sending</span>{% endif %}
+    </div>
+    <button name="action" value="send" class="btn btn-search"><i class="bi bi-send"></i> Send email</button>
+    <a class="btn btn-link" href="javascript:history.back()">Cancel</a>
+  </div></form>
+</div></div>
+{% endblock %}

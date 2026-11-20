@@ -16,10 +16,18 @@ class RegistrationForm(UserCreationForm):
 
     class Meta:
         model = User
-        fields = ("role", "username", "first_name", "last_name", "email", "company_name", "phone")
+        fields = ("role", "username", "first_name", "last_name", "email", "company_name", "mc_number", "phone")
 
 
 class UserRoleForm(forms.ModelForm):
     class Meta:
         model = User
-        fields = ("first_name", "last_name", "email", "company_name", "phone", "role", "is_active")
+        fields = ("first_name", "last_name", "email", "company_name", "mc_number", "phone", "role", "is_active")
+
+
+class ProfileForm(forms.ModelForm):
+    """The user's own details, used in email signatures and call scripts."""
+
+    class Meta:
+        model = User
+        fields = ("first_name", "last_name", "email", "company_name", "mc_number", "phone")

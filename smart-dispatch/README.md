@@ -1,7 +1,15 @@
-# Smart Dispatch
+# Sean AI
 
 Web-based smart dispatch platform for small US carriers (1–5 trucks) and remote
 dispatch teams. BIS Project, WIUT, student 00013457.
+
+Sean AI combines the best parts of three tools dispatchers use:
+
+| Inspired by | What Sean AI does |
+|---|---|
+| **DAT One** | Search loads and trucks with DH-O / DH-D radius, equipment, dates and rate filters |
+| **Neblo AI** | Email brokers from any load, or many at once; AI writes the email; Mailbox of everything sent |
+| **Numeo AI** | Broker directory (contacts, lanes, rates) and an AI **Call Assistant** for calling brokers |
 
 It works like a load board (DAT One, Neblo): dispatchers **search loads** by origin,
 deadhead, destination, equipment and dates, and brokers **search trucks**. Every load
@@ -93,7 +101,7 @@ cd WIUT\smart-dispatch
 python manage.py runserver
 ```
 
-After pulling new code, also run `python manage.py migrate`.
+After pulling new code, also run `pip install -r requirements.txt` and `python manage.py migrate`.
 
 ### macOS / Linux
 
@@ -131,12 +139,70 @@ about 150 US freight markets (`loadboard/geo.py`).
 The load board is the platform's own marketplace. Pulling loads from DAT or Truckstop needs
 their paid partner APIs, which the PID puts out of scope.
 
+## AI Co-Pilot
+
+**Email brokers (like Neblo).** In a load's details press **Email broker**: the email is pre-written with
+the lane, pickup, your truck's distance and your target rate, plus your signature with MC number
+(set it in **My profile**, bottom-left). **Write with AI** lets Sean AI rewrite it, optionally with a note
+("can pick up early"). To email many brokers at once, tick loads in the results and press
+**Email selected brokers**: one template, personalised per load. Every email is saved in **Mailbox**.
+
+![Email broker](docs/screenshots/email-broker.png)
+
+**Call Assistant (like Numeo).** Shows your **target rate** and **walk-away rate** (break-even including deadhead,
+from the engine settings), a call script with questions and negotiation tips (AI-written on request),
+a one-tap **Call** button, a form to log the result, and **Book load** with the agreed rate. All calls are in **Calls**.
+
+![Call Assistant](docs/screenshots/call-assistant.png)
+
+**Broker directory (like Numeo).** Every broker that posts on the platform, plus any you add yourself, with MC
+number, city, contacts, how many loads they post, their average $/mile, their top lanes, their open loads
+and your history with them. Search by name, MC or city; filter by state or "has open loads".
+
+![Broker directory](docs/screenshots/broker-directory.png)
+
+**What it does not do (yet).** Sean AI does not phone brokers by itself. A real AI voice agent needs a paid
+telephony and voice service (for example Twilio plus a speech model) and must follow call-recording and
+AI-disclosure rules, which is beyond this project; the Call Assistant prepares the dispatcher instead.
+It also does not read brokers' websites (scraping is unreliable and often against their terms); the
+directory is built from the platform's own postings and brokers you add.
+
+### Connect the AI (optional)
+
+Without a key the app works fully and uses built-in templates. To let Claude write emails and scripts,
+create an API key at console.anthropic.com, then set it before `runserver` (it costs a little per use):
+
+```bat
+set ANTHROPIC_API_KEY=your-key-here
+python manage.py runserver
+```
+
+Never put the key in code or on GitHub. The model is set by `SEAN_AI_MODEL` (default `claude-opus-5-5`).
+
+### Really send emails (optional)
+
+By default emails are printed in the server window (demo mode). To send through Gmail, create a
+**Gmail app password** (Google Account → Security → 2-Step Verification → App passwords), then:
+
+```bat
+set EMAIL_BACKEND=django.core.mail.backends.smtp.EmailBackend
+set EMAIL_HOST=smtp.gmail.com
+set EMAIL_PORT=587
+set EMAIL_USE_TLS=1
+set EMAIL_HOST_USER=you@gmail.com
+set EMAIL_HOST_PASSWORD=your-16-letter-app-password
+python manage.py runserver
+```
+
+To rename the app, set `APP_NAME` (for example `set APP_NAME=Shawn AI`).
+
 ## How it maps to the PID
 
 | PID requirement | Where |
 |---|---|
 | Registration, secure login, Dispatcher / Broker / Manager / Admin roles | `accounts/` |
 | Load board: search loads and trucks, post loads and trucks, book a load | `loadboard/` |
+| AI Co-Pilot: email brokers (single and bulk), call assistant, broker directory | `copilot/` |
 | Add, edit, delete, list loads, drivers, trucks (and brokers) | `dispatch/views.py`, `templates/dispatch/` |
 | Assign a load to a driver and a truck | `dispatch/services.py` → `assign_load` |
 | Status board (Available, Dispatched, In transit, Delivered) | `/board/` |
@@ -146,7 +212,7 @@ their paid partner APIs, which the PID puts out of scope.
 | Reports: loads by status, loads per driver, total miles for a selected week | `/reports/` |
 | REST API layer | `POST /api/evaluate/` (used by the live engine panel) |
 | Telegram bot: driver status updates and POD collection | `telegram_bot/` |
-| Black-box testing | `tests/` (59 tests) |
+| Black-box testing | `tests/` (75 tests) |
 | Anonymised test data | `python manage.py seed_demo` |
 
 ## Telegram bot for drivers
@@ -191,11 +257,12 @@ Layered, as in the PID:
 - **Presentation**: Django templates, Bootstrap 5, Chart.js (`templates/`)
 - **Application / API**: Django views and a JSON endpoint (`*/views.py`, `config/urls.py`)
 - **Driver channel**: Telegram bot (`telegram_bot/`), which reuses the same business-logic layer
+- **AI layer**: `copilot/ai.py` calls Claude with structured JSON output and falls back to templates
 - **Load board**: `loadboard/search.py` (radius search, lane rate, engine on each result) and `loadboard/geo.py` (cities and distances)
 - **Business logic**: `engine/core.py` (pure Python, no Django imports, so it is unit-tested on its own) and `dispatch/services.py` (assignment and status rules)
 - **Data**: relational models (`*/models.py`), SQLite in development; switch to PostgreSQL in `config/settings.py`
 
-Entities: User, LoadPosting, TruckPosting, RecentSearch, Broker, Driver, Truck, Load, Assignment,
+Entities: User, LoadPosting, TruckPosting, RecentSearch, EmailMessage, CallLog, Broker, Driver, Truck, Load, Assignment,
 ProofOfDelivery, CompanySettings.
 Broker "average rate per mile" and "number of loads" are calculated from loads
 rather than stored, so they can't fall out of date.

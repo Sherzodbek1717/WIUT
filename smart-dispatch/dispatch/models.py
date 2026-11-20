@@ -23,12 +23,16 @@ class Broker(models.Model):
     mc_number = models.CharField("MC number", max_length=20, blank=True)
     contact_email = models.EmailField(blank=True)
     contact_phone = models.CharField(max_length=30, blank=True)
+    website = models.URLField(blank=True)
+    city = models.CharField(max_length=80, blank=True)
+    state = models.CharField(max_length=2, blank=True, choices=[("", "—")] + US_STATES)
+    notes = models.TextField(blank=True, help_text="Private notes, e.g. pays fast, strict on appointments.")
 
     class Meta:
         ordering = ["name"]
 
     def get_absolute_url(self):
-        return reverse("broker_list")
+        return reverse("broker_detail", args=[self.pk])
 
     def __str__(self):
         return self.name

@@ -1,0 +1,23 @@
+{% extends "base.html" %}
+{% block title %}Mailbox{% endblock %}
+{% block content %}
+<h1 class="page-title"><i class="bi bi-envelope"></i> Mailbox</h1>
+{% if console_mode %}<div class="alert alert-info small"><i class="bi bi-info-circle"></i> Demo mode: emails are printed in the server window instead of being delivered. See the README to connect Gmail.</div>{% endif %}
+<div class="results-card shadow-sm"><div class="table-responsive">
+<table class="table results-table">
+  <thead><tr><th>Sent</th><th>To</th><th>Subject</th><th>Broker</th><th>Status</th></tr></thead>
+  <tbody>
+  {% for e in page %}
+  <tr class="no-click">
+    <td class="text-body-secondary">{{ e.sent_at|date:"M d, H:i" }}</td>
+    <td>{{ e.to_email }}</td>
+    <td style="white-space: normal"><details><summary>{{ e.subject }}{% if e.ai_written %} <span class="badge text-bg-primary"><i class="bi bi-stars"></i> AI</span>{% endif %}</summary><pre class="small mt-2 mb-0" style="white-space: pre-wrap">{{ e.body }}</pre></details></td>
+    <td>{% if e.broker %}<a href="{% url 'broker_detail' e.broker.pk %}">{{ e.broker }}</a>{% else %}—{% endif %}</td>
+    <td>{% if e.status == "sent" %}<span class="badge text-bg-success">Sent</span>{% else %}<span class="badge text-bg-danger" title="{{ e.error }}">Failed</span>{% endif %}</td>
+  </tr>
+  {% empty %}<tr class="no-click"><td colspan="5" class="text-center text-body-secondary py-4">No emails yet. Open a load in Search Loads and press <b>Email broker</b>, or tick several loads and press <b>Email selected</b>.</td></tr>
+  {% endfor %}
+  </tbody>
+</table></div></div>
+{% include "copilot/_pager.html" %}
+{% endblock %}
