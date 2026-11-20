@@ -1,0 +1,27 @@
+flowchart LR
+    DIS(["👤 Dispatcher"])
+    BRO(["👤 Broker"])
+    MAN(["👤 Manager"])
+    ADM(["👤 Admin"])
+    DRV(["👤 Driver"])
+    subgraph S["Sean AI"]
+        U1(Register / log in)
+        U2(Search loads)
+        U3(Book load)
+        U4(Email broker / bulk email)
+        U5(Call Assistant + log call)
+        U6(Browse broker directory)
+        U7(Manage drivers and trucks)
+        U8(Assign load, update status)
+        U9(Post truck)
+        U10(Post load)
+        U11(Search trucks)
+        U12(View dashboard and reports)
+        U13(Manage users, engine settings)
+        U14(Update status, send POD via Telegram)
+    end
+    DIS --- U1 & U2 & U3 & U4 & U5 & U6 & U7 & U8 & U9 & U11
+    BRO --- U1 & U10 & U11
+    MAN --- U1 & U12
+    ADM --- U13 & U12
+    DRV --- U14

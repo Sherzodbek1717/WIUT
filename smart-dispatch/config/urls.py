@@ -7,6 +7,7 @@ from analytics import views as analytics
 from dispatch import views as dispatch
 from engine import views as engine
 from copilot import views as copilot
+from loadboard import api as loadboard_api
 from loadboard import views as loadboard
 
 urlpatterns = [
@@ -69,6 +70,8 @@ urlpatterns = [
     path("settings/", engine.SettingsView.as_view(), name="engine_settings"),
 
     path("api/evaluate/", engine.evaluate_api, name="api_evaluate"),
+    path("api/loadboard/search/", loadboard_api.load_search_api, name="api_load_search"),
+    path("api/loads/", loadboard_api.booked_loads_api, name="api_loads"),
 
     path("admin/", admin.site.urls),
 ]

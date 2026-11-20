@@ -1,0 +1,192 @@
+erDiagram
+    USER {
+        int id PK
+        string username UK
+        bool is_active
+        string email UK
+        string role
+        string company_name
+        string phone
+        string mc_number
+    }
+    BROKER {
+        int id PK
+        string name UK
+        string mc_number
+        string contact_email
+        string contact_phone
+        string website
+        string city
+        string state
+        text notes
+    }
+    DRIVER {
+        int id PK
+        string phone
+        string status
+        int telegram_chat_id UK
+        string telegram_link_code UK
+    }
+    TRUCK {
+        int id PK
+        string unit_number UK
+        string truck_type
+        string status
+    }
+    LOAD {
+        int id PK
+        string reference
+        int broker_id FK
+        string origin_city
+        string origin_state
+        string destination_city
+        string destination_state
+        datetime pickup_at
+        datetime delivery_at
+        decimal rate
+        int loaded_miles
+        int deadhead_miles
+        string commodity
+        int weight_lbs
+        string status
+        int created_by_id FK
+        datetime created_at
+        datetime delivered_at
+    }
+    ASSIGNMENT {
+        int id PK
+        int load_id FK
+        int driver_id FK
+        int truck_id FK
+        datetime assigned_at
+        int assigned_by_id FK
+        bool active
+    }
+    PROOFOFDELIVERY {
+        int id PK
+        int load_id FK
+        int driver_id FK
+        file file
+        string original_name
+        datetime uploaded_at
+    }
+    COMPANYSETTINGS {
+        int id PK
+        decimal cost_per_mile
+        decimal target_profit_per_mile
+        decimal negotiate_band_pct
+        decimal max_deadhead_pct
+        float average_speed_mph
+        float dock_hours
+    }
+    LOADPOSTING {
+        int id PK
+        string origin_city
+        string origin_state
+        float origin_lat
+        float origin_lon
+        int posted_by_id FK
+        int broker_id FK
+        string company_name
+        string contact_phone
+        string contact_email
+        string reference
+        string destination_city
+        string destination_state
+        float destination_lat
+        float destination_lon
+        int trip_miles
+        date pickup_date
+        date delivery_date
+        string equipment
+        string load_type
+        bool team_required
+        int length_ft
+        int weight_lbs
+        decimal rate
+        string commodity
+        string comments
+        string status
+        datetime posted_at
+        int booked_by_id FK
+        int booked_load_id FK
+    }
+    TRUCKPOSTING {
+        int id PK
+        string origin_city
+        string origin_state
+        float origin_lat
+        float origin_lon
+        int posted_by_id FK
+        string company_name
+        string contact_phone
+        string contact_email
+        int truck_id FK
+        string destination_city
+        string destination_state
+        float destination_lat
+        float destination_lon
+        date available_from
+        date available_to
+        string equipment
+        string load_type
+        bool team
+        int length_ft
+        int max_weight_lbs
+        string comments
+        bool active
+        datetime posted_at
+    }
+    RECENTSEARCH {
+        int id PK
+        int user_id FK
+        string kind
+        string label
+        string query
+        datetime searched_at
+    }
+    EMAILMESSAGE {
+        int id PK
+        int user_id FK
+        int broker_id FK
+        int posting_id FK
+        string to_email
+        string subject
+        text body
+        bool ai_written
+        string status
+        string error
+        datetime sent_at
+    }
+    CALLLOG {
+        int id PK
+        int user_id FK
+        int broker_id FK
+        int posting_id FK
+        string phone
+        string outcome
+        decimal rate_quoted
+        text notes
+        datetime called_at
+    }
+    BROKER ||--o{ CALLLOG : "broker"
+    BROKER ||--o{ EMAILMESSAGE : "broker"
+    BROKER ||--o{ LOAD : "broker"
+    BROKER ||--o{ LOADPOSTING : "broker"
+    DRIVER ||--o{ ASSIGNMENT : "driver"
+    DRIVER ||--o{ PROOFOFDELIVERY : "driver"
+    LOAD ||--o{ ASSIGNMENT : "load"
+    LOAD ||--o{ PROOFOFDELIVERY : "load"
+    LOAD ||--o| LOADPOSTING : "booked_load"
+    LOADPOSTING ||--o{ CALLLOG : "posting"
+    LOADPOSTING ||--o{ EMAILMESSAGE : "posting"
+    TRUCK ||--o{ ASSIGNMENT : "truck"
+    TRUCK ||--o{ TRUCKPOSTING : "truck"
+    USER ||--o{ ASSIGNMENT : "assigned_by"
+    USER ||--o{ CALLLOG : "user"
+    USER ||--o{ EMAILMESSAGE : "user"
+    USER ||--o{ LOAD : "created_by"
+    USER ||--o{ LOADPOSTING : "booked_by"
+    USER ||--o{ LOADPOSTING : "posted_by"
+    USER ||--o{ RECENTSEARCH : "user"
+    USER ||--o{ TRUCKPOSTING : "posted_by"

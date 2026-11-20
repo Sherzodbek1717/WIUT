@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Not found{% endblock %}
+{% block content %}
+<div class="empty-state"><i class="bi bi-signpost-split"></i>
+  <div class="fs-4 fw-semibold text-body mt-2">Page not found</div>
+  <p>The page or record you are looking for does not exist or was removed.</p>
+  <a class="btn btn-search" href="{% url 'home' %}">Back to {{ APP_NAME }}</a>
+</div>
+{% endblock %}

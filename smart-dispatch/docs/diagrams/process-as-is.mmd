@@ -1,0 +1,13 @@
+flowchart LR
+    A([Truck becomes empty]) --> B[Open DAT / load boards<br/>in several browser tabs]
+    B --> C[Work out rate per mile<br/>by hand or calculator]
+    C --> D{Worth it?<br/>guess}
+    D -- no --> B
+    D -- yes --> E[Look up broker phone/email<br/>copy details by hand]
+    E --> F[Call or email broker<br/>typed from scratch]
+    F --> G{Booked?}
+    G -- no --> B
+    G -- yes --> H[Re-type load into<br/>spreadsheet]
+    H --> I[Send details to driver<br/>in WhatsApp / Telegram]
+    I --> J[Status updates and POD<br/>scattered in chats]
+    J --> K([Weekly profit worked out<br/>in a spreadsheet, if at all])

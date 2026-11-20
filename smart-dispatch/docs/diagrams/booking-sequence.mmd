@@ -1,0 +1,23 @@
+sequenceDiagram
+    actor D as Dispatcher
+    participant W as Sean AI (web)
+    participant E as Decision engine
+    participant B as Broker
+    participant T as Telegram bot
+    actor R as Driver
+    D->>W: Search loads (Dallas, TX, DH-O 100)
+    W->>E: Score each result (rate, trip + deadhead, HOS)
+    E-->>W: Accept / Negotiate / Reject
+    W-->>D: Results table with Smart pick
+    D->>W: Open load, Call Assistant
+    W-->>D: Script, target rate, walk-away rate
+    D->>B: Phone call / email
+    B-->>D: Agreed rate
+    D->>W: Book load ($ agreed)
+    W->>W: Create Load, mark posting booked
+    D->>W: Assign driver + truck
+    W->>T: Notify driver
+    T->>R: New load details + button
+    R->>T: Picked up → Delivered, POD photo
+    T->>W: Update status, save POD
+    W-->>D: Status board and dashboard updated

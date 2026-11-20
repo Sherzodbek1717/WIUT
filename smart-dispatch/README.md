@@ -113,6 +113,19 @@ Same steps, but use `python3 -m venv .venv` and `source .venv/bin/activate`.
 python manage.py test tests
 ```
 
+## Project documents (for the report)
+
+| Document | Contents |
+|---|---|
+| [docs/design.md](docs/design.md) | Process (as-is / to-be), use cases, architecture, booking sequence, ERD, design decisions |
+| [docs/traceability.md](docs/traceability.md) | Every PID objective, scope item and FR → status, code, test; limitations for the evaluation |
+| [docs/testing.md](docs/testing.md) | Black-box test plan: 41 test cases incl. boundary values, plus manual checks |
+| [docs/test-results.md](docs/test-results.md) | Results of the last real run of all automated tests (`python scripts/test_report.py`) |
+| [docs/api.md](docs/api.md) | JSON API with real example responses |
+| [docs/survey.md](docs/survey.md) | Survey questionnaire (40+ responses) and interview guide |
+| [docs/deployment.md](docs/deployment.md) | Putting the site online (PythonAnywhere) |
+| `docs/diagrams/*.png` | Diagrams ready to paste into Word |
+
 ## Load board
 
 **Search Loads** (dispatchers)
@@ -210,9 +223,9 @@ To rename the app, set `APP_NAME` (for example `set APP_NAME=Shawn AI`).
 | Editable cost-per-mile benchmark | `/settings/` (admin) → `engine/models.py` |
 | Analytics dashboard: best lanes, best brokers, empty-mile %, weekly gross and profit | `/dashboard/`, `analytics/metrics.py` |
 | Reports: loads by status, loads per driver, total miles for a selected week | `/reports/` |
-| REST API layer | `POST /api/evaluate/` (used by the live engine panel) |
+| REST API layer | [docs/api.md](docs/api.md): `/api/evaluate/`, `/api/loadboard/search/`, `/api/loads/` |
 | Telegram bot: driver status updates and POD collection | `telegram_bot/` |
-| Black-box testing | `tests/` (75 tests) |
+| Black-box testing | `tests/` (87 tests), [docs/testing.md](docs/testing.md) |
 | Anonymised test data | `python manage.py seed_demo` |
 
 ## Telegram bot for drivers

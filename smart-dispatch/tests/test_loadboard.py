@@ -204,3 +204,28 @@ class LaneMarketTests(TestCase):
         market = lane_market({"origin": "Dallas, TX", "destination": "Atlanta, GA"})
         self.assertEqual(market["count"], 2)
         self.assertAlmostEqual(float(market["rate_per_mile"]), float(expected), places=2)
+
+
+class ApiTests(TestCase):
+    def setUp(self):
+        self.broker = user(User.Role.BROKER, "broker", company="Broker Co")
+        self.dispatcher = user(User.Role.DISPATCHER, "disp")
+        post_load(self.broker, "Dallas, TX", "Atlanta, GA", rate="2500")
+
+    def test_search_api_returns_results_with_verdicts(self):
+        self.client.force_login(self.dispatcher)
+        data = self.client.get(reverse("api_load_search"), {"origin": "Dallas, TX", "dh_o": 50}).json()
+        self.assertEqual(data["count"], 1)
+        self.assertEqual(data["results"][0]["destination"], "Atlanta, GA")
+        self.assertIn(data["results"][0]["recommendation"], ("accept", "negotiate", "reject"))
+        self.assertEqual(self.client.get(reverse("api_load_search"), {"origin": "Nowhere"}).status_code, 400)
+
+    def test_booked_loads_api_and_permissions(self):
+        self.client.force_login(self.dispatcher)
+        self.assertEqual(self.client.get(reverse("api_loads")).json()["count"], 0)
+        self.assertEqual(self.client.get(reverse("api_loads"), {"status": "bogus"}).status_code, 400)
+        self.client.force_login(self.broker)
+        self.assertEqual(self.client.get(reverse("api_loads")).status_code, 403)
+        self.assertEqual(self.client.get(reverse("api_load_search"), {"origin": "Dallas, TX"}).status_code, 403)
+        self.client.logout()
+        self.assertEqual(self.client.get(reverse("api_loads")).status_code, 302)

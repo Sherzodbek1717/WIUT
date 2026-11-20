@@ -1,0 +1,12 @@
+flowchart LR
+    A([Truck becomes empty]) --> B[Search Loads<br/>origin + DH-O, filters]
+    B --> C[[Engine scores every load<br/>Accept / Negotiate / Reject]]
+    C --> D{Pick a load}
+    D --> E[Email broker or Call Assistant<br/>AI draft, target and walk-away rate]
+    E --> F{Booked?}
+    F -- no --> B
+    F -- yes --> G[Book load: saved to TMS<br/>no re-typing]
+    G --> H[Assign driver + truck]
+    H --> I[[Bot sends load to driver<br/>on Telegram]]
+    I --> J[Driver taps In transit / Delivered<br/>and sends POD photo]
+    J --> K([Status board, dashboard and<br/>weekly report update automatically])

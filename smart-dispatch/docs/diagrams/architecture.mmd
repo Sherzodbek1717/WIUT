@@ -1,0 +1,36 @@
+flowchart TB
+    subgraph P["Presentation layer"]
+        WEB["Web pages<br/>Django templates + Bootstrap 5<br/>Chart.js dashboard"]
+        TG["Telegram bot<br/>(drivers)"]
+    end
+    subgraph A["Application / API layer"]
+        VIEWS["Django views<br/>(role-based access)"]
+        API["JSON API<br/>/api/evaluate · /api/loadboard/search · /api/loads"]
+        BOT["Bot handlers<br/>long polling"]
+    end
+    subgraph B["Business-logic layer"]
+        ENGINE["Decision engine<br/>engine/core.py<br/>rate/mile, profit, HOS, verdict"]
+        SEARCH["Load board search<br/>loadboard/search.py + geo.py"]
+        SERVICES["Dispatch rules<br/>dispatch/services.py<br/>assign · status changes"]
+        AI["AI Co-Pilot<br/>copilot/ai.py<br/>emails · call scripts"]
+        METRICS["Analytics<br/>analytics/metrics.py"]
+    end
+    subgraph D["Data layer"]
+        DB[("Relational database<br/>SQLite / PostgreSQL")]
+    end
+    subgraph X["External services (optional)"]
+        CLAUDE["Claude API<br/>(Anthropic)"]
+        SMTP["Email (SMTP / Gmail)"]
+        TAPI["Telegram Bot API"]
+    end
+    WEB --> VIEWS
+    WEB -. "fetch()" .-> API
+    TG <--> TAPI <--> BOT
+    VIEWS --> ENGINE & SEARCH & SERVICES & AI & METRICS
+    API --> ENGINE & SEARCH
+    BOT --> SERVICES
+    SEARCH --> ENGINE
+    SERVICES & SEARCH & METRICS & AI --> DB
+    VIEWS --> DB
+    AI -. "if API key set" .-> CLAUDE
+    VIEWS -. "send email" .-> SMTP

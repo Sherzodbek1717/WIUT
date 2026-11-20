@@ -86,6 +86,21 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATICFILES_DIRS = [BASE_DIR / "static"]
+STATIC_ROOT = BASE_DIR / "staticfiles"  # filled by `python manage.py collectstatic` when deploying
+
+# Production hardening, on whenever DEBUG is off (i.e. on a real server with HTTPS).
+if not DEBUG:
+    if SECRET_KEY.startswith("dev-only"):
+        raise RuntimeError("Set DJANGO_SECRET_KEY to a long random value before running with DEBUG off.")
+    SECURE_SSL_REDIRECT = os.environ.get("DJANGO_SSL_REDIRECT", "1") == "1"
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
+    MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")  # serves CSS/JS without DEBUG
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    SECURE_HSTS_SECONDS = int(os.environ.get("DJANGO_HSTS_SECONDS", "3600"))
+    CSRF_TRUSTED_ORIGINS = [f"https://{host}" for host in ALLOWED_HOSTS if host not in ("localhost", "127.0.0.1")]
+    # HSTS for subdomains/preload is not ours to set on a shared host (e.g. *.pythonanywhere.com).
+    SILENCED_SYSTEM_CHECKS = ["security.W005", "security.W021"]
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 

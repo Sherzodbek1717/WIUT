@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}No access{% endblock %}
+{% block content %}
+<div class="empty-state"><i class="bi bi-shield-lock"></i>
+  <div class="fs-4 fw-semibold text-body mt-2">You don't have access to this page</div>
+  <p>This page is for a different account type{% if user.is_authenticated %} than {{ user.get_role_display|lower }}{% endif %}.</p>
+  <a class="btn btn-search" href="{% url 'home' %}">Go to my start page</a>
+</div>
+{% endblock %}
